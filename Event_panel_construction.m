@@ -1,4 +1,4 @@
-%% STEP 3: ECB EVENT PANEL AND CONTRACT MATCHING.
+%% STEP 4: ECB EVENT PANEL AND CONTRACT MATCHING.
 %
 % The script builds the ECB event panel and links each monetary policy event
 % to the available cleaned futures contract-days. It uses the ECB meeting
