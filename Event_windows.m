@@ -1,4 +1,4 @@
-%% STEP 4: INTRADAY EVENT WINDOW EXTRACTION.
+%% STEP 5: INTRADAY EVENT WINDOW EXTRACTION.
 %
 % The code opens the event-study stage of the project. It takes the
 % preferred futures contracts selected in the previous step and extracts
