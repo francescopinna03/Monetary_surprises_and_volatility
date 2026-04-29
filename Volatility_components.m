@@ -1,4 +1,4 @@
-%% STEP 12: VOLATILITY COMPONENT MODELS.
+%% STEP 13: VOLATILITY COMPONENT MODELS.
 %
 % In this code PR-window realized variance is decomposed into two simple
 % panel-level components and estimates state-dependent models on each
