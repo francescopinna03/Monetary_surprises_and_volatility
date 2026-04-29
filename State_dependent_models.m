@@ -1,8 +1,34 @@
-%% pr_state_dependent_models_10.m
+%% STEP 9: STATE-DEPENDENT PR MODELS
+%
+% The code estimates the first battery of state-dependent PR-only models,
+% using the long state-dependent panel constructed in the previous step, and
+% studies whether the response of PR-window volatility measures to monetary
+% policy surprises changes with observable event-level states.
+%
+% The dependent variables are the absolute PR jump, the inverse hyperbolic
+% sine transformation of press release realized variance and the inverse hyperbolic sine
+% transformation of PR negative realized semivariance. The main shock variable
+% is the target surprise expressed in 10 basis point units.
+%
+% The state-dependent specifications interact the target surprise with three
+% state channels. The first is the hiking-regime dummy, the second is the
+% pre-announcement realized-volatility state and the third is the recent
+% monetary-policy memory measure based on lagged target surprises. When
+% available, the script also includes the downside pre-announcement state
+% based on negative realized semivariance.
+%
+% All regressions are estimated by OLS with event-date clustered standard
+% errors. The script also computes post-estimation marginal effects, including
+% baseline slopes, slopes across regimes and slopes evaluated at different
+% standardized state values.
+%
+% Input file is Output/analysis/pr_state_dependent_panel.csv. Output files are
+% Output/analysis/pr_state_model_coefficients.csv, Output/analysis/pr_state_model_summary.csv
+% and Output/analysis/pr_state_marginal_effects.csv.
 
 clear; clc;
 
-projectRoot = '/Users/francescopinna/Desktop/Econometric_M2';
+projectRoot = '/Users/francescopinna/Desktop/Econometrics_data';
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 panelFile = fullfile(analysisDir, 'pr_state_dependent_panel.csv');
@@ -13,7 +39,7 @@ requiredVars = ["event_date", "root_code", "PR_abs_jump", "asinh_PR_rv", "asinh_
 missingVars = requiredVars(~ismember(requiredVars, string(T.Properties.VariableNames)));
 
 if ~isempty(missingVars)
-    error('Mancano colonne nel pannello state-dependent: %s', strjoin(missingVars, ', '));    %note for the reviewer: necessary debug step after issues on preliminary tests of 04-02.
+    error('Mancano colonne nel pannello state-dependent: %s', strjoin(missingVars, ', '));
 end
 
 T.event_date = parse_date_flex(T.event_date);
