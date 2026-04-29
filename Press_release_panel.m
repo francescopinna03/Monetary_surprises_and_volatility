@@ -1,4 +1,4 @@
-%% STEP 5: PRESS RELEASE BASELINE PANEL.
+%% STEP 6: PRESS RELEASE BASELINE PANEL.
 %
 % Here is built the baseline press-release panel used in the first
 % empirical layer of the project. The code starts from the wide event-window panel
