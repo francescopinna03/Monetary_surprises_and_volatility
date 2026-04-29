@@ -1,4 +1,4 @@
-%% STEP 8: STATE VECTOR PANEL.
+%% STEP 9: STATE VECTOR PANEL.
 %
 % The code constructs the event-level state vector and merges it back into
 % the PR-only long panel, starting from the PR signal panel produced in the
