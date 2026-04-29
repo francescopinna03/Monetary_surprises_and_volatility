@@ -1,4 +1,4 @@
-%% STEP 7: PRESS RELEASE SIGNAL MODELS.
+%% STEP 8: PRESS RELEASE SIGNAL MODELS.
 %
 % Here is built the PR-only signal panel and estimates the first set of
 % linear signal regressions. It starts from the baseline PR panel and adds
