@@ -1,4 +1,4 @@
-%% STEP 9: STATE-DEPENDENT PR MODELS
+%% STEP 10: STATE-DEPENDENT PR MODELS.
 %
 % The code estimates the first battery of state-dependent PR-only models,
 % using the long state-dependent panel constructed in the previous step, and
