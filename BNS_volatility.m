@@ -1,4 +1,4 @@
-%% STEP 15: BNS VOLATILITY MODELS.
+%% STEP 16: BNS VOLATILITY MODELS.
 %
 % Here is estimated a Barndorff-Nielsen-Shephard type volatility
 % decomposition inside the press-release window, by using the bar-level PR
