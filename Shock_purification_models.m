@@ -1,4 +1,4 @@
-%% STEP 10: SHOCK PURIFICATION MODELS.
+%% STEP 11: SHOCK PURIFICATION MODELS.
 %
 % The script purifies the monetary-policy target surprise with respect to a
 % small set of pre-announcement event-level states. Here are used the event-state
