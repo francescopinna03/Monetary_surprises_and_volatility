@@ -1,4 +1,4 @@
-%% STEP 13: HIERARCHICAL SHRINKAGE MODELS.
+%% STEP 14: HIERARCHICAL SHRINKAGE MODELS.
 %
 % The code estimates a hierarchical shrinkage exercise for the main
 % state-dependent PR outcomes by using the long state-dependent PR panel and
