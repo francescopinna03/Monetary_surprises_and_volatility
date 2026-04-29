@@ -1,4 +1,4 @@
-%% STEP 2: CONTRACT-DAY QUALITY PANEL.
+%% STEP 3: CONTRACT-DAY QUALITY PANEL.
 %
 % Building of a contract-day quality panel from the cleaned Barchart
 % futures files produced by the cleaning step. It scans Output/cleaned for
