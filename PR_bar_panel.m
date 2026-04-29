@@ -1,4 +1,4 @@
-%% STEP 14: PRESS RELEASE BAR PANEL CONSTRUCTION.
+%% STEP 15: PRESS RELEASE BAR PANEL CONSTRUCTION.
 %
 % The script reconstructs a bar-level panel for the PR event window. 
 %
