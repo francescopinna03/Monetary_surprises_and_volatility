@@ -1,4 +1,4 @@
-%% STEP 6: FRACTIONAL RESPONSE MODELS.
+%% STEP 7: FRACTIONAL RESPONSE MODELS.
 %
 % The script estimates the first dedicated econometric battery on the
 % negative semivariance share of the PR window. The dependent variable is
