@@ -1,4 +1,4 @@
-%% STEP 11: FUNCTIONAL STATE MODELS.
+%% STEP 12: FUNCTIONAL STATE MODELS.
 %
 % Here is extended the state-dependent analysis by allowing the marginal
 % effect of the monetary-policy surprise to vary flexibly with the
