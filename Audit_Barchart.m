@@ -231,18 +231,63 @@ function a = audit_file(fpath)
 
     dataText = strjoin(dataLines, newline);
 
-    C = textscan(dataText, '%q%f%f%f%f%*s%*s%f', 'Delimiter', ',', 'ReturnOnError', false);
+try
+    C = textscan(dataText, '%q%q%q%q%q%q%q%q', ...
+        'Delimiter', ',', ...
+        'EndOfLine', '\n', ...
+        'ReturnOnError', false);
+catch
+    warning('Textscan failed for file: %s', fpath);
+    a.sort_order = 'parse_failed';
+    a.n_bad_dt = a.n_rows;
+    a.n_missing_core = a.n_rows;
+    a.n_nonpositive_price = NaN;
+    a.n_negative_volume = NaN;
+    a.ohlc_ok = false;
+    return;
+end
 
-    timeCol = C{1};
-    O = C{2};
-    H = C{3};
-    L = C{4};
-    X = C{5};
-    V = C{6};
+nCol = cellfun(@numel, C);
+nMax = max(nCol);
 
+if isempty(nMax) || nMax == 0
+    a.n_rows = 0;
+    return;
+end
+
+for jj = 1:numel(C)
+    C{jj} = C{jj}(:);
+    if numel(C{jj}) < nMax
+        C{jj}(end+1:nMax, 1) = {''};
+    elseif numel(C{jj}) > nMax
+        C{jj} = C{jj}(1:nMax);
+    end
+end
+
+timeCol = C{1};
+
+toNum = @(z) str2double(regexprep(strtrim(string(z)), '[,%"]', ''));
+
+O = toNum(C{2});
+H = toNum(C{3});
+L = toNum(C{4});
+X = toNum(C{5});
+V = toNum(C{8});
+
+try
     dt = datetime(timeCol, 'InputFormat', 'yyyy-MM-dd HH:mm');
+catch
+    dt = NaT(nMax, 1);
+    for jj = 1:nMax
+        try
+            dt(jj) = datetime(timeCol{jj}, 'InputFormat', 'yyyy-MM-dd HH:mm');
+        catch
+            dt(jj) = NaT;
+        end
+    end
+end
 
-    a.n_bad_dt = sum(isnat(dt));
+a.n_bad_dt = sum(isnat(dt));
 
     dtV = dt(~isnat(dt));
 
