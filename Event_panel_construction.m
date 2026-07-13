@@ -25,7 +25,7 @@
 
 clear; clc;
 
-projectRoot = '/Users/francescopinna/Desktop/Econometrics_data';
+projectRoot = get_project_root();
 
 diagDir = fullfile(projectRoot, 'Output', 'diagnostics');
 dayQualityFile = fullfile(diagDir, 'contract_day_quality.csv');
