@@ -26,7 +26,7 @@
 
 clear; clc;
 
-projectRoot = '/Users/francescopinna/Desktop/Econometrics_data';
+projectRoot = get_project_root();
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 cleanDir = fullfile(projectRoot, 'Output', 'cleaned');
