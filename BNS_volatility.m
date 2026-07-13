@@ -43,7 +43,7 @@ minMedianBars = 6;
 
 T = readtable(statePanelFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
-T.event_date = parse_date_flex(T.event_date);
+T.event_date = Parse_date_flexible(T.event_date);
 T.root_code = string(T.root_code);
 
 numVars = ["shock_target_10bp", "regime_hike", "state_pre_rv_z", "state_pre_rsvneg_z", "ma3_target_10bp_z", "root_gg", "PR_abs_jump", "asinh_PR_rv", "asinh_PR_rsv_neg"];
