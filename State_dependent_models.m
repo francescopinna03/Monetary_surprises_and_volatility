@@ -28,7 +28,7 @@
 
 clear; clc;
 
-projectRoot = '/Users/francescopinna/Desktop/Econometrics_data';
+projectRoot = get_project_root();
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 panelFile = fullfile(analysisDir, 'pr_state_dependent_panel.csv');
