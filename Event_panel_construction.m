@@ -176,18 +176,6 @@ if ~isempty(pref)
     disp(tmp(1:min(10, height(tmp)), {'event_date', 'root_code', 'file_name_clean', 'expiry_code', 'contract_year', 'prelim_eligible', 'selection_score', 'total_volume', 'share_low_volume', 'pct_expected_gaps'}));
 end
 
-function pathOut = locate_first_existing(candidates)
-
-    pathOut = "";
-
-    for i = 1:numel(candidates)
-        if exist(candidates{i}, 'file')
-            pathOut = string(candidates{i});
-            return;
-        end
-    end
-end
-
 function eventPanel = load_and_build_event_panel(calendarFile)
 
     [~, ~, ext] = fileparts(calendarFile);
@@ -251,22 +239,6 @@ function eventPanel = load_and_build_event_panel(calendarFile)
     eventPanel.pc_datetime_local = raw.event_date + raw.pc_dur;
 end
 
-function col = find_col(allNames, candidates)
-
-    col = "";
-    lower_all = lower(allNames);
-    lower_cand = lower(candidates);
-
-    for i = 1:numel(lower_cand)
-        idx = find(lower_all == lower_cand(i), 1);
-
-        if ~isempty(idx)
-            col = allNames(idx);
-            return;
-        end
-    end
-end
-
 function out = assign_optional_col(T, varName, n)
 
     if strlength(varName) > 0
@@ -323,51 +295,6 @@ function dur = parse_hhmm_to_duration(x)
     end
 end
 
-function dt = parse_date_flex(x)
-
-    if isdatetime(x)
-        dt = x;
-        return;
-    end
-
-    if isnumeric(x)
-        try
-            dt = datetime(x, 'ConvertFrom', 'excel');
-            return;
-        catch
-        end
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    fmts = {'yyyy-MM-dd', 'dd/MM/yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm', 'dd-MMM-yyyy'};
-    bestDt = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-
-        try
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                bestDt = dTry;
-            end
-
-        catch
-        end
-    end
-
-    dt = bestDt;
-end
-
 function y = minmax_01(x)
 
     x = double(x);
@@ -384,19 +311,12 @@ function y = minmax_01(x)
 end
 
 function pref = choose_preferred_contracts(cand)
-
     groupKey = string(cand.event_date, 'yyyy-MM-dd') + "||" + cand.root_code;
-    [~, ~, g] = unique(groupKey);
-    nGroups = max(g);
-    rows = cell(nGroups, 1);
-
-    for i = 1:nGroups
-        G = cand(g == i, :);
-        G = sortrows(G, {'prelim_eligible', 'selection_score', 'rank_within_root_day'}, {'descend', 'descend', 'ascend'});
-        rows{i} = G(1, :);
-    end
-
-    pref = vertcat(rows{:});
+    sortTbl = table(groupKey, cand.prelim_eligible, cand.selection_score, cand.rank_within_root_day, 'VariableNames', {'k', 'e', 's', 'r'});
+    [~, ordIdx] = sortrows(sortTbl, {'k', 'e', 's', 'r'}, {'ascend', 'descend', 'descend', 'ascend'});
+    sortedKeys = groupKey(ordIdx);
+    firstOfGroup = [true; sortedKeys(2:end) ~= sortedKeys(1:end-1)];
+    pref = cand(ordIdx(firstOfGroup), :);
 end
 
 function coverage = summarize_event_coverage(eventPanel, cand, pref)
