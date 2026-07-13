@@ -23,7 +23,7 @@
 % Output/analysis/pr_fractional_coefficients.csv, Output/analysis/pr_fractional_model_summary.csv
 % and Output/analysis/pr_fractional_diagnostics.csv.
 
-projectRoot = get_project_root();
+projectRoot = Get_project_root();
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 panelFile = fullfile(analysisDir, 'pr_baseline_panel.csv');
