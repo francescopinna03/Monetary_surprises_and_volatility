@@ -1,4 +1,4 @@
-projectRoot = get_project_root();
+projectRoot = Get_project_root();
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 panelFile = fullfile(analysisDir, 'pr_bns_component_panel.csv');
