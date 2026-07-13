@@ -30,7 +30,7 @@
 
 clear; clc;
 
-projectRoot = get_project_root();
+projectRoot = Get_project_root();
 
 windowDir = fullfile(projectRoot, 'Output', 'event_windows');
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
