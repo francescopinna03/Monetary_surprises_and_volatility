@@ -38,7 +38,7 @@ calendarCandidates{4} = fullfile(projectRoot, 'Raw', 'ECB_calendar', 'ecb_calend
 calendarCandidates{5} = fullfile(projectRoot, 'Raw', 'ECB_calendar', 'ecb_meeting_calendar_2013_2026.xlsx');
 calendarCandidates{6} = fullfile(projectRoot, 'Data', 'ecb_meeting_calendar_2013_2026.xlsx');
 
-calendarFile = locate_first_existing(calendarCandidates);
+calendarFile = Locate_first_existing(calendarCandidates);
 
 if strlength(calendarFile) == 0
     error('ECB calendar not found.');
