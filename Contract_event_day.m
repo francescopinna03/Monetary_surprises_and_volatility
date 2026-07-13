@@ -44,6 +44,12 @@ fprintf('Found %d cleaned CSV files.\n\n', nFiles);
 dayCell = cell(nFiles, 1);
 fileCell = cell(nFiles, 1);
 
+importOpts = [];
+
+if nFiles > 0
+    importOpts = detectImportOptions(fullfile(files(1).folder, files(1).name), 'TextType', 'string');
+end
+
 for i = 1:nFiles
 
     fname = files(i).name;
@@ -52,7 +58,7 @@ for i = 1:nFiles
     fprintf('[%3d/%3d] %s\n', i, nFiles, fname);
 
     meta = parse_clean_filename(fname);
-    T = read_cleaned_file(fpath);
+    T = read_cleaned_file(fpath, importOpts);
 
     if isempty(T)
         fileCell{i} = empty_file_row(meta);
@@ -145,9 +151,8 @@ function meta = parse_clean_filename(fname)
     meta.download_date = datetime(str2double(tok{7}), str2double(tok{5}), str2double(tok{6}));
 end
 
-function T = read_cleaned_file(fpath)
+function T = read_cleaned_file(fpath, opts)
 
-    opts = detectImportOptions(fpath, 'TextType', 'string');
     T = readtable(fpath, opts);
 
     if ~ismember("Time", string(T.Properties.VariableNames))
@@ -162,9 +167,12 @@ end
 function dayTbl = build_day_quality_table(T, meta, params)
 
     tradeDate = dateshift(T.Time, 'start', 'day');
-    uDays = unique(tradeDate);
+    [uDays, firstIdx] = unique(tradeDate);
     nDays = numel(uDays);
-
+    lastIdx = [firstIdx(2:end) - 1; height(T)];
+    allTimes = T.Time;
+    allVolumes = T.Volume;
+    allPrices = T.Latest;
     file_name_clean = repmat(meta.file_name_clean, nDays, 1);
     root_code = repmat(meta.root_code, nDays, 1);
     expiry_code = repmat(meta.expiry_code, nDays, 1);
@@ -196,28 +204,31 @@ function dayTbl = build_day_quality_table(T, meta, params)
 
     for d = 1:nDays
 
-        X = T(tradeDate == uDays(d), :);
+        rows = firstIdx(d):lastIdx(d);
+        dayTimes = allTimes(rows);
+        dayVolumes = allVolumes(rows);
+        dayPrices = allPrices(rows);
 
         trade_date(d) = uDays(d);
-        n_bars(d) = height(X);
-        total_volume(d) = sum(X.Volume, 'omitnan');
-        median_volume(d) = median(X.Volume, 'omitnan');
-        mean_volume(d) = mean(X.Volume, 'omitnan');
-        min_volume(d) = min(X.Volume);
-        max_volume(d) = max(X.Volume);
+        n_bars(d) = numel(rows);
+        total_volume(d) = sum(dayVolumes, 'omitnan');
+        median_volume(d) = median(dayVolumes, 'omitnan');
+        mean_volume(d) = mean(dayVolumes, 'omitnan');
+        min_volume(d) = min(dayVolumes);
+        max_volume(d) = max(dayVolumes);
 
-        lv = X.Volume <= params.low_volume_threshold;
+        lv = dayVolumes <= params.low_volume_threshold;
 
         n_low_volume(d) = sum(lv);
         share_low_volume(d) = mean(lv);
 
-        first_bar_time(d) = X.Time(1);
-        last_bar_time(d) = X.Time(end);
+        first_bar_time(d) = dayTimes(1);
+        last_bar_time(d) = dayTimes(end);
         span_minutes(d) = minutes(last_bar_time(d) - first_bar_time(d));
 
         if n_bars(d) >= 2
 
-            gaps = minutes(diff(X.Time));
+            gaps = minutes(diff(dayTimes));
             is_expected_gap = abs(gaps - params.expected_bar_minutes) < 1e-9;
 
             n_gaps(d) = numel(gaps);
@@ -228,7 +239,7 @@ function dayTbl = build_day_quality_table(T, meta, params)
             n_long_gaps(d) = sum(gaps > params.long_gap_minutes);
             n_very_long_gaps(d) = sum(gaps > params.very_long_gap_minutes);
 
-            r = diff(log(X.Latest));
+            r = diff(log(dayPrices));
 
             ret_var(d) = sum(r.^2, 'omitnan');
             abs_return_sum(d) = sum(abs(r), 'omitnan');
