@@ -61,9 +61,9 @@ T.target_x_memory = T.shock_target_10bp .* T.ma3_target_10bp_z;
 
 B = readtable(barFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
-B.event_date = parse_date_flex(B.event_date);
+T.event_date = Parse_date_flexible(T.event_date);
 B.root_code = string(B.root_code);
-B.bar_time = parse_datetime_flex(B.bar_time);
+T.event_date = Parse_date_flexible(T.event_date);
 
 if ~isnumeric(B.r_bar)
     B.r_bar = str2double(B.r_bar);
