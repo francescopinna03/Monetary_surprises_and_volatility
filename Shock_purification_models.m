@@ -33,7 +33,7 @@
 
 clear; clc;
 
-projectRoot = get_project_root();
+projectRoot = Get_project_root();
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 eventFile = fullfile(analysisDir, 'event_state_panel.csv');
