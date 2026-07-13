@@ -59,22 +59,22 @@ if ~isempty(missingVars)
     error('Missing columns in preferred_contract_by_event.csv: %s', strjoin(missingVars, ', '));
 end
 
-pref.event_date = parse_date_flex(pref.event_date);
-pref.pr_datetime_local = parse_datetime_flex(pref.pr_datetime_local);
-pref.pc_datetime_local = parse_datetime_flex(pref.pc_datetime_local);
+pref.event_date = Parse_date_flexible(pref.event_date);
+pref.pr_datetime_local = Parse_datetime_flexible(pref.pr_datetime_local);
+pref.pc_datetime_local = Parse_datetime_flexible(pref.pc_datetime_local);
 pref.root_code = string(pref.root_code);
 pref.file_name_clean = string(pref.file_name_clean);
 pref.event_id = string(pref.event_id);
 pref.expiry_code = string(pref.expiry_code);
 
 if ismember("trade_date", string(pref.Properties.VariableNames))
-    pref.trade_date = parse_date_flex(pref.trade_date);
+    pref.trade_date = Parse_date_flexible(pref.trade_date);
 else
     pref.trade_date = pref.event_date;
 end
 
 if ~islogical(pref.prelim_eligible)
-    pref.prelim_eligible = string_to_bool(pref.prelim_eligible);
+    pref.prelim_eligible = String_to_boolean(pref.prelim_eligible);
 end
 
 pref = pref(pref.prelim_eligible, :);
