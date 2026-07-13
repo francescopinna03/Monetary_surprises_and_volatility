@@ -26,7 +26,7 @@
 
 clear; clc;
 
-projectRoot = get_project_root();
+projectRoot = Get_project_root();
 
 rawDir = fullfile(projectRoot, 'Raw', 'Barchart_futures');
 cleanDir = fullfile(projectRoot, 'Output', 'cleaned');
