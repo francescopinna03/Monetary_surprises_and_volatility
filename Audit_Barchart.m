@@ -26,7 +26,7 @@
 
 clear; clc;
 
-projectRoot = '/Users/francescopinna/Desktop/Econometrics_data';
+projectRoot = get_project_root();
 
 rawDir = fullfile(projectRoot, 'Raw', 'Barchart_futures');
 manifestDir = fullfile(projectRoot, 'Output', 'manifests');
