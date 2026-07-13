@@ -27,7 +27,7 @@
 
 clear; clc;
 
-projectRoot = get_project_root();
+projectRoot = Get_project_root();
 
 cleanDir = fullfile(projectRoot, 'Output', 'cleaned');
 diagDir = fullfile(projectRoot, 'Output', 'diagnostics');
