@@ -31,7 +31,7 @@
 % Output/analysis/pr_bns_feasibility_report.csv.
 clear; clc;
 
-projectRoot = get_project_root();
+projectRoot = Get_project_root();
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 statePanelFile = fullfile(analysisDir, 'pr_state_dependent_panel.csv');
