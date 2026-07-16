@@ -59,9 +59,17 @@ T.target_x_hike = T.shock_target_10bp .* T.regime_hike;
 T.target_x_preRV = T.shock_target_10bp .* T.state_pre_rv_z;
 T.target_x_memory = T.shock_target_10bp .* T.ma3_target_10bp_z;
 
+B = readtable(barFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
+
 B.event_date = Parse_date_flexible(B.event_date);
 B.root_code = string(B.root_code);
 B.bar_time = Parse_datetime_flexible(B.bar_time);
+
+if ~isnumeric(B.r_bar)
+    B.r_bar = str2double(B.r_bar);
+end
+
+B = B(~isnat(B.event_date) & B.root_code ~= "" & ~isnan(B.r_bar), :);
 
 if ~isnumeric(B.r_bar)
     B.r_bar = str2double(B.r_bar);
