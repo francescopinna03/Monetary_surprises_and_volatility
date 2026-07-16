@@ -43,7 +43,9 @@ cfg.nLambda = 40;
 cfg.maxIter = 3000;
 cfg.tol = 1e-7;
 cfg.outcomes = ["PR_abs_jump", "asinh_PR_rv", "asinh_PR_rsv_neg"];
+cfg.seed = 20260711;
 
+rng(cfg.seed);
 T = readtable(panelFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
 T.event_date = parse_date_flex(T.event_date);
