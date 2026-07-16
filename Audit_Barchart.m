@@ -231,8 +231,10 @@ function a = audit_file(fpath)
 
     dataText = strjoin(dataLines, newline);
 
-C = textscan(dataText, '%q%q%q%q%q%q%q%q', 'Delimiter', ',', 'EndOfLine', '\n', 'ReturnOnError', false);
+dataText = strjoin(dataLines, newline);
 
+try
+    C = textscan(dataText, '%q%q%q%q%q%q%q%q', 'Delimiter', ',', 'EndOfLine', '\n', 'ReturnOnError', false);
 catch
     warning('Textscan failed for file: %s', fpath);
     a.sort_order = 'parse_failed';
