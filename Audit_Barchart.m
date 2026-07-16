@@ -229,8 +229,6 @@ function a = audit_file(fpath)
         return;
     end
 
-    dataText = strjoin(dataLines, newline);
-
 dataText = strjoin(dataLines, newline);
 
 try
