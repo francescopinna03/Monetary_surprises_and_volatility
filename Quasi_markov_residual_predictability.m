@@ -14,6 +14,9 @@ cfg.alphaGrid = [0.50, 0.60, 0.65, 0.70];
 cfg.dBounds = [-0.45, 0.75];
 cfg.minSeriesLength = 30;
 cfg.minUsableObs = 60;
+cfg.seed = 20260711;
+
+rng(cfg.seed);
 
 if ~isfile(panelFile)
     error('Input file not found: %s', panelFile);
