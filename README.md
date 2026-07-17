@@ -20,23 +20,43 @@ Third, the econometric layer estimates the response of intraday volatility to mo
 
 The code is written in MATLAB and uses standard table, datetime and matrix operations. 
 
-Local paths are intentionally explicit. This makes the workflow transparent but requires updating `projectRoot` before replication.
+All scripts resolve the location of the data package through the shared helper `Get_project_root.m`, so no source file needs to be edited before replication. The helper looks for the data folder in the following order: the environment variable `ECONOMETRICS_DATA_ROOT` (if set), a folder named `Econometrics_data` next to the MATLAB scripts, and finally a folder named `Econometrics_data` in the current working directory. If none of these resolves to a folder containing the expected `Raw/` subfolder, the scripts stop with an explicit error message.
+
+Common utilities are shared function files in the repository root: `Parse_date_flexible.m`, `Parse_datetime_flexible.m`, `String_to_boolean.m`, `Locate_first_existing.m` and `Find_column.m`. They are found automatically when MATLAB runs from the repository folder or when the folder is on the MATLAB path.
+
+The stochastic steps are seeded for exact reproducibility. `Hierarchical_shrinkage.m` seeds the cross-validation fold assignment and `Quasi_markov_residual_predictability.m` seeds the bootstrap draws, both through a `cfg.seed` field set at the top of the script. Changing the seed changes the bootstrap p-values and the selected penalty within sampling noise; keeping the default reproduces the reported numbers bit for bit.
 
 The pipeline deliberately includes a large number of diagnostic checks, intermediate summaries and debugging tables. The authors agree that a similar design choice reflects the size and fragility of the underlying intraday dataset. Since the empirical analysis depends on high-frequency futures prices, event-time matching, contract selection and short-window realized measures, each step produces auxiliary outputs that make the data-management process inspectable.
 
 These diagnostics are part of the computational strategy used to preserve data integrity throughout the pipeline. File-level manifests, cleaning logs, contract-day quality summaries, event-coverage reports, window-level eligibility checks and model-summary tables allow the user to verify whether each transformation is coherent before moving to the next stage of the analysis. In this sense, the repository is structured also to document the path by which the final estimation sample is obtained from a large and heterogeneous set of raw intraday files.
 
-The raw input files are provided separately together with the paper draft. To replicate the full empirical workflow, place the input files in the directory structure described above and update `projectRoot` accordingly.
+The raw input files are provided separately together with the paper draft, as a single archive that unzips to a folder named `Econometrics_data`. To replicate the full empirical workflow, unzip the archive and either place the resulting `Econometrics_data` folder next to the MATLAB scripts or point the environment variable `ECONOMETRICS_DATA_ROOT` to it, for example with `setenv('ECONOMETRICS_DATA_ROOT', '/path/to/Econometrics_data')` inside MATLAB before running the pipeline.
 
 ## Repository structure
 
-The repository is organized as a flat MATLAB codebase. The files are intended to be run sequentially, with some later files serving as robustness checks or extensions rather than mandatory baseline steps.
+The repository is organized as a flat MATLAB codebase. The files are intended to be run sequentially, with some later files serving as robustness checks or extensions rather than mandatory baseline steps. The master script `Run_pipeline.m` executes all seventeen steps in order and writes a full console log to `pipeline_run.log`.
+
+A full replication therefore reduces to one command. From MATLAB:
+
+```matlab
+cd /path/to/this/repository
+setenv('ECONOMETRICS_DATA_ROOT', '/path/to/Econometrics_data')
+Run_pipeline
+```
+
+From the terminal, without opening the MATLAB desktop:
+
+```bash
+./run_pipeline.sh /path/to/Econometrics_data
+```
+
+The shell wrapper uses `matlab` from the PATH or the newest installation found in `/Applications`, exports the data root when passed as an argument, and runs the pipeline headless with `matlab -batch`. The environment variable can be omitted entirely when the `Econometrics_data` folder sits next to the scripts.
 
 | Step | File | Role |
 | --- | --- | --- |
 | 1 | `Audit_Barchart.m` | Audits the raw Barchart intraday futures files. It checks filename structure, contract metadata, headers, footers, timestamps, duplicates, missing fields and OHLC consistency. |
-| 2 | `clean_raw_files_02.m` | Driver script that applies the cleaning helper to all raw Barchart CSV files in `Raw/Barchart_futures`. It writes cleaned files and cleaning logs. |
-| 2 helper | `Cleaning_Barchart.m` | Helper function for cleaning one raw Barchart file. It is called repeatedly by `clean_raw_files_02.m` and is not meant to be run as a standalone script. |
+| 2 | `Clean_raw_files.m` | Driver script that applies the cleaning helper to all raw Barchart CSV files in `Raw/Barchart_futures`. It writes cleaned files and cleaning logs. |
+| 2 helper | `clean_single_barchart_file.m` | Helper function for cleaning one raw Barchart file. It is called repeatedly by `Clean_raw_files.m` and is not meant to be run as a standalone script. |
 | 3 | `Contract_event_day.m` | Builds the contract-day quality panel from cleaned files. It computes liquidity, coverage, gap and realized-measure diagnostics. |
 | 4 | `Event_panel_construction.m` | Constructs the ECB event panel and links monetary policy dates to available futures contract-days. |
 | 5 | `Event_windows.m` | Extracts intraday PR, PC and announcement windows from the preferred futures contracts. |
@@ -52,7 +72,7 @@ The repository is organized as a flat MATLAB codebase. The files are intended to
 | 15 | `PR_bar_panel.m` | Reconstructs the bar-level press-release panel needed for the BNS-style volatility decomposition. |
 | 16 | `BNS_volatility.m` | Computes realized variance, bipower variation and jump variation, then estimates state-dependent models on the continuous and jump components. |
 
-The distinction between `clean_raw_files_02.m` and `Cleaning_Barchart.m` is important. The former is the script that should be executed by the user. The latter is a single-file cleaning function. In a full run, the driver calls the helper once for each raw Barchart CSV file.
+The distinction between `Clean_raw_files.m` and `clean_single_barchart_file.m` is important. The former is the script that should be executed by the user. The latter is a single-file cleaning function. In a full run, the driver calls the helper once for each raw Barchart CSV file. The shared helper `Get_project_root.m` must also be available on the MATLAB path or in the same folder as the scripts, which is automatic when the repository is used as the working directory.
 
 ## Data availability and required inputs
 
@@ -60,12 +80,13 @@ The raw and intermediate input files required to reproduce the empirical workflo
 
 The replication package is expected to contain the files required by the MATLAB pipeline, including all 104 raw Barchart intraday futures CSV files at five-minute frequency, the ECB monetary policy meeting calendar, including event dates, press-release times and press-conference time, EA-MPD monetary surprise data (Altavilla et al. (2019)), OIS changes used to construct target and path surprise measures and the auxiliary input files needed to reproduce the intermediate panels used in the paper
 
-Once the data package has been placed locally, the user should arrange the files according to the directory structure expected by the scripts and set the `projectRoot` variable at the top of each MATLAB file.
+Once the data package has been placed locally, the scripts locate it automatically through `Get_project_root.m` as described in the reproducibility notes above. No path needs to be edited in the source files.
 
-The expected directory structure is:
+The expected directory structure of the data package is:
 
 ```text
 projectRoot/
+Econometrics_data/
 ├── Raw/
 │   ├── Barchart_futures/
 │   ├── ECB_calendar/
