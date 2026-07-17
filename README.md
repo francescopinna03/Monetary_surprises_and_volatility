@@ -47,7 +47,7 @@ Run_pipeline
 From the terminal, without opening the MATLAB desktop:
 
 ```bash
-./run_pipeline.sh /path/to/Econometrics_data
+./Run_pipeline.sh /path/to/Econometrics_data
 ```
 
 The shell wrapper uses `matlab` from the PATH or the newest installation found in `/Applications`, exports the data root when passed as an argument, and runs the pipeline headless with `matlab -batch`. The environment variable can be omitted entirely when the `Econometrics_data` folder sits next to the scripts.
