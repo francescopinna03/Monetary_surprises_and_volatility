@@ -37,7 +37,7 @@ if ~isempty(missingVars)
     error('Mancano colonne: %s', strjoin(missingVars, ', '));
 end
 
-T.event_date = parse_date_flex(T.event_date);
+T.event_date = Parse_date_flexible(T.event_date);
 T.root_code = string(T.root_code);
 
 numVars = ["PR_neg_share", "shock_target", "ois_1m_raw", "ois_3m_raw", "ois_6m_raw", "ois_1y_raw", "ois_2y_raw", "ois_3y_raw", "ois_4y_raw", "ois_5y_raw", "ois_10y_raw"];
@@ -564,51 +564,4 @@ function m = sigm(z)
 
     z = max(min(z, 35), -35);
     m = 1 ./ (1 + exp(-z));
-end
-
-function dt = parse_date_flex(x)
-
-    if isdatetime(x)
-        dt = dateshift(x, 'start', 'day');
-        return;
-    end
-
-    if isnumeric(x)
-        try
-            dt = dateshift(datetime(x, 'ConvertFrom', 'excel'), 'start', 'day');
-            return;
-        catch
-        end
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    if ~isstring(x)
-        error('Formato data non supportato.');
-    end
-
-    fmts = {'yyyy-MM-dd', 'dd/MM/yyyy', 'MM/dd/yyyy', 'dd-MMM-yyyy', 'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm', 'MM/dd/yyyy HH:mm'};
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-        try
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                best = dTry;
-            end
-        catch
-        end
-    end
-
-    dt = dateshift(best, 'start', 'day');
 end

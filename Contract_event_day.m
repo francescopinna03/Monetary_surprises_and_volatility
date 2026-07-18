@@ -173,6 +173,7 @@ function dayTbl = build_day_quality_table(T, meta, params)
     allTimes = T.Time;
     allVolumes = T.Volume;
     allPrices = T.Latest;
+
     file_name_clean = repmat(meta.file_name_clean, nDays, 1);
     root_code = repmat(meta.root_code, nDays, 1);
     expiry_code = repmat(meta.expiry_code, nDays, 1);

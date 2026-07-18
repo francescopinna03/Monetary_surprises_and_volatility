@@ -46,8 +46,8 @@ if ~isempty(missingP)
     error('Mancano colonne in pr_baseline_panel.csv: %s', strjoin(missingP, ', '));
 end
 
-P.event_date = parse_date_flex(P.event_date);
-P.trade_date = parse_date_flex(P.trade_date);
+P.event_date = Parse_date_flexible(P.event_date);
+P.trade_date = Parse_date_flexible(P.trade_date);
 P.root_code = string(P.root_code);
 P.event_id = string(P.event_id);
 P.file_name_clean = string(P.file_name_clean);
@@ -76,14 +76,14 @@ if ~isempty(missingB)
     error('Mancano colonne in event_window_bars.csv: %s', strjoin(missingB, ', '));
 end
 
-B.event_date = parse_date_flex(B.event_date);
-B.trade_date = parse_date_flex(B.trade_date);
+B.event_date = Parse_date_flexible(B.event_date);
+B.trade_date = Parse_date_flexible(B.trade_date);
 B.root_code = string(B.root_code);
 B.event_id = string(B.event_id);
 B.file_name_clean = string(B.file_name_clean);
 B.expiry_code = string(B.expiry_code);
 B.window_name = string(B.window_name);
-B.Time = parse_datetime_flex(B.Time);
+B.Time = Parse_datetime_flexible(B.Time);
 
 numVarsB = ["contract_year", "Latest", "rel_event_minutes"];
 
@@ -456,103 +456,4 @@ function T = format_panel_for_write(T)
     if ismember("trade_date", string(T.Properties.VariableNames))
         T.trade_date = string(T.trade_date, 'yyyy-MM-dd');
     end
-end
-
-function dt = parse_date_flex(x)
-
-    if isdatetime(x)
-        dt = dateshift(x, 'start', 'day');
-        return;
-    end
-
-    if isnumeric(x)
-        try
-            dt = dateshift(datetime(x, 'ConvertFrom', 'excel'), 'start', 'day');
-            return;
-        catch
-        end
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    if ~isstring(x)
-        error('Formato data non supportato.');
-    end
-
-    fmts = {'yyyy-MM-dd', 'dd/MM/yyyy', 'MM/dd/yyyy', 'dd-MMM-yyyy', 'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm', 'MM/dd/yyyy HH:mm'};
-
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-
-        try
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                best = dTry;
-            end
-
-        catch
-        end
-    end
-
-    dt = dateshift(best, 'start', 'day');
-end
-
-function dt = parse_datetime_flex(x)
-
-    if isdatetime(x)
-        dt = x;
-        return;
-    end
-
-    if isnumeric(x)
-        try
-            dt = datetime(x, 'ConvertFrom', 'excel');
-            return;
-        catch
-        end
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    if ~isstring(x)
-        error('Formato datetime non supportato.');
-    end
-
-    fmts = {'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm', 'MM/dd/yyyy HH:mm', 'dd-MMM-yyyy HH:mm'};
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-
-        try
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                best = dTry;
-            end
-
-        catch
-        end
-    end
-
-    dt = best;
 end

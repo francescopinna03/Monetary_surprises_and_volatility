@@ -88,7 +88,9 @@ fprintf('Preferred eligible contracts to process: %d\n', height(pref));
 uniqueFiles = unique(pref.file_name_clean);
 fileCache = containers.Map('KeyType', 'char', 'ValueType', 'any');
 
-fprintf('Caching %d cleaned files...\n', numel(uniqueFiles));
+fprintf('Caching %d cleaned files\n', numel(uniqueFiles));
+
+importOpts = [];
 
 for i = 1:numel(uniqueFiles)
 
@@ -100,7 +102,11 @@ for i = 1:numel(uniqueFiles)
         continue;
     end
 
-    T = read_cleaned_file(fpath);
+    if isempty(importOpts)
+        importOpts = detectImportOptions(fpath, 'TextType', 'string');
+    end
+
+    T = read_cleaned_file(fpath, importOpts);
     fileCache(fname) = sortrows(T, 'Time');
 end
 
@@ -184,9 +190,8 @@ if ~isempty(eventWindowSummary)
     disp(tmp(1:min(10, height(tmp)), showVars));
 end
 
-function T = read_cleaned_file(fpath)
+function T = read_cleaned_file(fpath, opts)
 
-    opts = detectImportOptions(fpath, 'TextType', 'string');
     T = readtable(fpath, opts);
 
     required = ["Time", "Open", "High", "Low", "Latest", "Volume"];
@@ -485,96 +490,6 @@ function T = format_panel_for_write(T)
     T.trade_date = string(T.trade_date, 'yyyy-MM-dd');
     T.pr_datetime_local = string(T.pr_datetime_local, 'yyyy-MM-dd HH:mm');
     T.pc_datetime_local = string(T.pc_datetime_local, 'yyyy-MM-dd HH:mm');
-end
-
-function dt = parse_date_flex(x)
-
-    if isdatetime(x)
-        dt = dateshift(x, 'start', 'day');
-        return;
-    end
-
-    if isnumeric(x)
-        dt = dateshift(datetime(x, 'ConvertFrom', 'excel'), 'start', 'day');
-        return;
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    fmts = {'yyyy-MM-dd', 'dd/MM/yyyy', 'MM/dd/yyyy', 'dd-MMM-yyyy'};
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-
-        try
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                best = dTry;
-            end
-
-        catch
-        end
-    end
-
-    dt = dateshift(best, 'start', 'day');
-end
-
-function dt = parse_datetime_flex(x)
-
-    if isdatetime(x)
-        dt = x;
-        return;
-    end
-
-    if isnumeric(x)
-        dt = datetime(x, 'ConvertFrom', 'excel');
-        return;
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    fmts = {'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm', 'MM/dd/yyyy HH:mm', 'dd-MMM-yyyy HH:mm'};
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-
-        try
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                best = dTry;
-            end
-
-        catch
-        end
-    end
-
-    dt = best;
-end
-
-function y = string_to_bool(x)
-
-    x = lower(strtrim(string(x)));
-    y = x == "true" | x == "1";
 end
 
 function T = empty_window_summary_table()

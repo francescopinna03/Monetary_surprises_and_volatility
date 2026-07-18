@@ -311,6 +311,7 @@ function y = minmax_01(x)
 end
 
 function pref = choose_preferred_contracts(cand)
+
     groupKey = string(cand.event_date, 'yyyy-MM-dd') + "||" + cand.root_code;
     sortTbl = table(groupKey, cand.prelim_eligible, cand.selection_score, cand.rank_within_root_day, 'VariableNames', {'k', 'e', 's', 'r'});
     [~, ordIdx] = sortrows(sortTbl, {'k', 'e', 's', 'r'}, {'ascend', 'descend', 'descend', 'ascend'});

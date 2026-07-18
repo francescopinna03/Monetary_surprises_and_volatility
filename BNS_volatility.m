@@ -71,12 +71,6 @@ end
 
 B = B(~isnat(B.event_date) & B.root_code ~= "" & ~isnan(B.r_bar), :);
 
-if ~isnumeric(B.r_bar)
-    B.r_bar = str2double(B.r_bar);
-end
-
-B = B(~isnat(B.event_date) & B.root_code ~= "" & ~isnan(B.r_bar), :);
-
 [Comp, reportTbl] = compute_bns_components(B, barFile, minBarsForBNS, minShareGroupsOk, minMedianBars);
 
 reportFile = fullfile(analysisDir, 'pr_bns_feasibility_report.csv');

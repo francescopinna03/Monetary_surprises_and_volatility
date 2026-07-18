@@ -42,7 +42,7 @@ if ~isempty(missingVars)
     error('Mancano colonne nel pannello state-dependent: %s', strjoin(missingVars, ', '));
 end
 
-T.event_date = parse_date_flex(T.event_date);
+T.event_date = Parse_date_flexible(T.event_date);
 T.root_code = string(T.root_code);
 
 numVars = ["PR_abs_jump", "asinh_PR_rv", "asinh_PR_rsv_neg", "shock_target_10bp", "regime_hike", "state_pre_rv_z", "state_pre_rsvneg_z", "ma3_target_10bp_z"];
@@ -363,44 +363,4 @@ function e = unit_vector(n, idx)
 
     e = zeros(n, 1);
     e(idx) = 1;
-end
-
-function dt = parse_date_flex(x)
-
-    if isdatetime(x)
-        dt = dateshift(x, 'start', 'day');
-        return;
-    end
-
-    if isnumeric(x)
-        dt = dateshift(datetime(x, 'ConvertFrom', 'excel'), 'start', 'day');
-        return;
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    fmts = {'yyyy-MM-dd', 'dd/MM/yyyy', 'MM/dd/yyyy', 'dd-MMM-yyyy', 'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm', 'MM/dd/yyyy HH:mm'};
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-        try
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                best = dTry;
-            end
-        catch
-        end
-    end
-
-    dt = dateshift(best, 'start', 'day');
 end

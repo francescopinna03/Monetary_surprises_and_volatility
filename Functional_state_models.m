@@ -54,7 +54,7 @@ models{3} = struct('name', "FS03_asinhRSVneg_preRSV", 'depvar', "asinh_PR_rsv_ne
 
 T = readtable(panelFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
-T.event_date = parse_date_flex(T.event_date);
+T.event_date = Parse_date_flexible(T.event_date);
 T.root_code = string(T.root_code);
 
 needed = ["shock_target_10bp", "PR_abs_jump", "asinh_PR_rv", "asinh_PR_rsv_neg", "state_pre_rv_z", "state_pre_rsvneg_z", "root_gg"];
@@ -390,44 +390,4 @@ function rows = add_combo(rows, fit, effectName, stateValue, L, noteTxt)
     end
 
     rows(end + 1, :) = {fit.model_name, fit.depvar, string(effectName), stateValue, est, se, t, p, lo, hi, string(noteTxt)};
-end
-
-function dt = parse_date_flex(x)
-
-    if isdatetime(x)
-        dt = dateshift(x, 'start', 'day');
-        return;
-    end
-
-    if isnumeric(x)
-        dt = dateshift(datetime(x, 'ConvertFrom', 'excel'), 'start', 'day');
-        return;
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    fmts = {'yyyy-MM-dd', 'dd/MM/yyyy', 'MM/dd/yyyy', 'dd-MMM-yyyy', 'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm', 'MM/dd/yyyy HH:mm'};
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-        try
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                best = dTry;
-            end
-        catch
-        end
-    end
-
-    dt = dateshift(best, 'start', 'day');
 end

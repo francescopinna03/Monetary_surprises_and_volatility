@@ -54,34 +54,13 @@ function [cleanTbl, rowLog, fileSummary] = clean_single_barchart_file(fpath, out
         return;
     end
 
-    raw_line_no = nan(nRawDataLines, 1);
-    timeStr = strings(nRawDataLines, 1);
-    Open = nan(nRawDataLines, 1);
-    High = nan(nRawDataLines, 1);
-    Low = nan(nRawDataLines, 1);
-    Latest = nan(nRawDataLines, 1);
-    Volume = nan(nRawDataLines, 1);
-    parse_ok = false(nRawDataLines, 1);
+    raw_line_no = (2:(nRawDataLines + 1))';
+    [timeStr, Open, High, Low, Latest, Volume, parse_ok] = parse_data_lines(dataLines);
 
-    for i = 1:nRawDataLines
+    failIdx = find(~parse_ok);
 
-        raw_line_no(i) = i + 1;
-        line = strtrim(dataLines{i});
-
-        fields = split_csv_line(line);
-
-        if numel(fields) < 8
-            rowLog = [rowLog; make_log_row(fileName, raw_line_no(i), "", "dropped", "parse_failed")]; %#ok<AGROW>
-            continue;
-        end
-
-        parse_ok(i) = true;
-        timeStr(i) = string(strtrim(fields{1}));
-        Open(i) = safe_str2double(fields{2});
-        High(i) = safe_str2double(fields{3});
-        Low(i) = safe_str2double(fields{4});
-        Latest(i) = safe_str2double(fields{5});
-        Volume(i) = safe_str2double(fields{8});
+    if ~isempty(failIdx)
+        rowLog = [rowLog; make_log_rows(fileName, raw_line_no(failIdx), strings(numel(failIdx), 1), "dropped", "parse_failed")];
     end
 
     T = table(raw_line_no, timeStr, Open, High, Low, Latest, Volume, parse_ok);
@@ -95,7 +74,7 @@ function [cleanTbl, rowLog, fileSummary] = clean_single_barchart_file(fpath, out
         return;
     end
 
-    T.Time = parse_datetime_flex(T.timeStr);
+    T.Time = Parse_datetime_flexible(T.timeStr);
 
     bad_dt = isnat(T.Time);
     missing_core = any(isnan([T.Open T.High T.Low T.Latest T.Volume]), 2);
@@ -107,20 +86,17 @@ function [cleanTbl, rowLog, fileSummary] = clean_single_barchart_file(fpath, out
 
     if any(invalidMask)
         idxBad = find(invalidMask);
+        reasonMat = [bad_dt(idxBad), missing_core(idxBad), nonpositive_price(idxBad), negative_volume(idxBad), ohlc_bad(idxBad)];
+        reasonNames = ["bad_datetime", "missing_core_fields", "nonpositive_price", "negative_volume", "ohlc_inconsistency"];
+        reasons = strings(numel(idxBad), 1);
 
-        for j = 1:numel(idxBad)
-
-            ii = idxBad(j);
-            reasonList = strings(0, 1);
-
-            if bad_dt(ii); reasonList(end+1) = "bad_datetime"; end
-            if missing_core(ii); reasonList(end+1) = "missing_core_fields"; end
-            if nonpositive_price(ii); reasonList(end+1) = "nonpositive_price"; end
-            if negative_volume(ii); reasonList(end+1) = "negative_volume"; end
-            if ohlc_bad(ii); reasonList(end+1) = "ohlc_inconsistency"; end
-
-            rowLog = [rowLog; make_log_row(fileName, T.raw_line_no(ii), T.timeStr(ii), "dropped", strjoin(reasonList, ';'))]; %#ok<AGROW>
+        for k = 1:numel(reasonNames)
+            m = reasonMat(:, k);
+            reasons(m) = reasons(m) + reasonNames(k) + ";";
         end
+
+        reasons = regexprep(reasons, ';$', '');
+        rowLog = [rowLog; make_log_rows(fileName, T.raw_line_no(idxBad), T.timeStr(idxBad), "dropped", reasons)];
     end
 
     nInvalidCore = sum(invalidMask);
@@ -141,11 +117,7 @@ function [cleanTbl, rowLog, fileSummary] = clean_single_barchart_file(fpath, out
 
     if any(dupMask)
         idxDup = find(dupMask);
-
-        for j = 1:numel(idxDup)
-            ii = idxDup(j);
-            rowLog = [rowLog; make_log_row(fileName, T.raw_line_no(ii), string(T.Time(ii), 'yyyy-MM-dd HH:mm'), "dropped", "duplicate_timestamp")]; %#ok<AGROW>
-        end
+        rowLog = [rowLog; make_log_rows(fileName, T.raw_line_no(idxDup), string(T.Time(idxDup), 'yyyy-MM-dd HH:mm'), "dropped", "duplicate_timestamp")];
     end
 
     nDupDropped = sum(dupMask);
@@ -158,41 +130,28 @@ function [cleanTbl, rowLog, fileSummary] = clean_single_barchart_file(fpath, out
     end
 
     spikeMask = false(height(T), 1);
-    x = T.Latest;
-    d = dateshift(T.Time, 'start', 'day');
 
-    for t = 2:height(T)-1
-
-        sameDay = (d(t-1) == d(t)) && (d(t) == d(t+1));
-        gap1 = minutes(T.Time(t) - T.Time(t-1));
-        gap2 = minutes(T.Time(t+1) - T.Time(t));
-
-        if ~sameDay || gap1 > params.max_spike_gap_minutes || gap2 > params.max_spike_gap_minutes
-            continue;
-        end
-
-        localMed = median([x(t-1), x(t+1)]);
-
-        if localMed <= 0
-            continue;
-        end
-
-        ratio = max(x(t) / localMed, localMed / x(t));
-        r1 = log(x(t) / x(t-1));
-        r2 = log(x(t+1) / x(t));
-
-        if ratio >= params.spike_ratio_threshold && abs(r1) >= params.spike_logjump_threshold && abs(r2) >= params.spike_logjump_threshold && sign(r1) ~= sign(r2)
-            spikeMask(t) = true;
-        end
+    if height(T) >= 3
+        x = T.Latest;
+        d = dateshift(T.Time, 'start', 'day');
+        xPrev = x(1:end-2);
+        xCurr = x(2:end-1);
+        xNext = x(3:end);
+        sameDay = d(1:end-2) == d(2:end-1) & d(2:end-1) == d(3:end);
+        gap1 = minutes(T.Time(2:end-1) - T.Time(1:end-2));
+        gap2 = minutes(T.Time(3:end) - T.Time(2:end-1));
+        localMed = (xPrev + xNext) / 2;
+        ratio = max(xCurr ./ localMed, localMed ./ xCurr);
+        r1 = log(xCurr ./ xPrev);
+        r2 = log(xNext ./ xCurr);
+        eligible = sameDay & gap1 <= params.max_spike_gap_minutes & gap2 <= params.max_spike_gap_minutes & localMed > 0;
+        isSpike = eligible & ratio >= params.spike_ratio_threshold & abs(r1) >= params.spike_logjump_threshold & abs(r2) >= params.spike_logjump_threshold & sign(r1) ~= sign(r2);
+        spikeMask(2:end-1) = isSpike;
     end
 
     if any(spikeMask)
         idxSpike = find(spikeMask);
-
-        for j = 1:numel(idxSpike)
-            ii = idxSpike(j);
-            rowLog = [rowLog; make_log_row(fileName, T.raw_line_no(ii), string(T.Time(ii), 'yyyy-MM-dd HH:mm'), "dropped", "one_bar_price_spike")]; %#ok<AGROW>
-        end
+        rowLog = [rowLog; make_log_rows(fileName, T.raw_line_no(idxSpike), string(T.Time(idxSpike), 'yyyy-MM-dd HH:mm'), "dropped", "one_bar_price_spike")];
     end
 
     nSpikeDropped = sum(spikeMask);
@@ -208,11 +167,7 @@ function [cleanTbl, rowLog, fileSummary] = clean_single_barchart_file(fpath, out
 
     if any(lowVolMask)
         idxLV = find(lowVolMask);
-
-        for j = 1:numel(idxLV)
-            ii = idxLV(j);
-            rowLog = [rowLog; make_log_row(fileName, T.raw_line_no(ii), string(T.Time(ii), 'yyyy-MM-dd HH:mm'), "flagged_only", "low_volume")]; %#ok<AGROW>
-        end
+        rowLog = [rowLog; make_log_rows(fileName, T.raw_line_no(idxLV), string(T.Time(idxLV), 'yyyy-MM-dd HH:mm'), "flagged_only", "low_volume")];
     end
 
     cleanTbl = T(:, {'Time', 'Open', 'High', 'Low', 'Latest', 'Volume'});
@@ -244,6 +199,60 @@ function params = set_default_params(params)
     end
 end
 
+function [timeStr, Open, High, Low, Latest, Volume, parse_ok] = parse_data_lines(dataLines)
+
+    n = numel(dataLines);
+    timeStr = strings(n, 1);
+    Open = nan(n, 1);
+    High = nan(n, 1);
+    Low = nan(n, 1);
+    Latest = nan(n, 1);
+    Volume = nan(n, 1);
+    parse_ok = false(n, 1);
+
+    try
+        C = textscan(strjoin(dataLines, newline), '%q%q%q%q%q%q%q%q', 'Delimiter', ',', 'EndOfLine', '\n', 'ReturnOnError', false);
+        nParsed = cellfun(@numel, C);
+
+        if all(nParsed == n)
+            timeStr = string(strtrim(C{1}));
+            Open = clean_numeric_field(C{2});
+            High = clean_numeric_field(C{3});
+            Low = clean_numeric_field(C{4});
+            Latest = clean_numeric_field(C{5});
+            Volume = clean_numeric_field(C{8});
+            parse_ok(:) = true;
+            return;
+        end
+    catch
+    end
+
+    for i = 1:n
+        fields = split_csv_line(strtrim(dataLines{i}));
+
+        if numel(fields) < 8
+            continue;
+        end
+
+        parse_ok(i) = true;
+        timeStr(i) = string(strtrim(fields{1}));
+        Open(i) = safe_str2double(fields{2});
+        High(i) = safe_str2double(fields{3});
+        Low(i) = safe_str2double(fields{4});
+        Latest(i) = safe_str2double(fields{5});
+        Volume(i) = safe_str2double(fields{8});
+    end
+end
+
+function x = clean_numeric_field(c)
+
+    s = strtrim(string(c));
+    s = erase(s, '"');
+    s = erase(s, ',');
+    s = erase(s, '%');
+    x = str2double(s);
+end
+
 function fields = split_csv_line(line)
 
     C = textscan(line, '%q', 'Delimiter', ',', 'Whitespace', '');
@@ -268,32 +277,6 @@ function x = safe_str2double(s)
     end
 end
 
-function dt = parse_datetime_flex(timeStr)
-
-    n = numel(timeStr);
-    formats = {'yyyy-MM-dd HH:mm', 'yyyy-MM-dd HH:mm:ss', 'MM/dd/yyyy HH:mm', 'MM/dd/yyyy HH:mm:ss'};
-
-    bestBad = inf;
-    bestDt = NaT(n, 1);
-
-    for k = 1:numel(formats)
-
-        try
-            dtTry = datetime(timeStr, 'InputFormat', formats{k});
-            nBad = sum(isnat(dtTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                bestDt = dtTry;
-            end
-
-        catch
-        end
-    end
-
-    dt = bestDt;
-end
-
 function write_clean_csv(cleanTbl, outPath)
 
     outTbl = cleanTbl;
@@ -301,9 +284,16 @@ function write_clean_csv(cleanTbl, outPath)
     writetable(outTbl, outPath);
 end
 
-function row = make_log_row(fileName, rawLineNo, timeStr, action, reason)
+function rows = make_log_rows(fileName, rawLineNo, timeRef, action, reason)
 
-    row = table(string(fileName), rawLineNo, string(timeStr), string(action), string(reason), 'VariableNames', {'file_name', 'raw_line_no', 'time_ref', 'action', 'reason'});
+    n = numel(rawLineNo);
+    reason = string(reason);
+
+    if isscalar(reason)
+        reason = repmat(reason, n, 1);
+    end
+
+    rows = table(repmat(string(fileName), n, 1), rawLineNo(:), string(timeRef(:)), repmat(string(action), n, 1), reason(:), 'VariableNames', {'file_name', 'raw_line_no', 'time_ref', 'action', 'reason'});
 end
 
 function T = empty_clean_table()

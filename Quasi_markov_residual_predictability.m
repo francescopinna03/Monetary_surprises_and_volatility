@@ -31,7 +31,7 @@ if ~isempty(missingCore)
     error('Missing required variables: %s', strjoin(missingCore, ', '));
 end
 
-T.event_date = parse_date_flex(T.event_date);
+T.event_date = Parse_date_flexible(T.event_date);
 T.root_code = lower(strtrim(string(T.root_code)));
 
 candidateNumeric = [ cfg.outcomes, "shock_target_10bp", "root_gg", "regime_hike", "state_pre_rv_z", "state_pre_rsvneg_z", "ma3_target_10bp_z", "T_e", "P_e", "target_x_hike", "target_x_preRV", "target_x_preRSVneg", "target_x_memory", "target_x_T", "target_x_P" ];
@@ -354,7 +354,7 @@ function R = leave_one_event_out(T, outcome, spec, cfg)
     dates = unique(T.event_date(complete));
     dates = sort(dates);
 
-    R = empty_crossfit_table();
+    rowsCell = cell(numel(dates), 1);
 
     for j = 1:numel(dates)
         d = dates(j);
@@ -408,14 +408,17 @@ function R = leave_one_event_out(T, outcome, spec, cfg)
         tmp.rank_x = repmat(rankX, n, 1);
         tmp.rank_deficient = repmat(rankDeficient, n, 1);
 
-        R = [R; tmp];
+        rowsCell{j} = tmp;
     end
 
-    if isempty(R)
+    keep = ~cellfun(@isempty, rowsCell);
+
+    if any(keep)
+        R = vertcat(rowsCell{keep});
+    else
+        R = empty_crossfit_table();
         warning('No cross-fitted residuals produced for %s | %s.', outcome, spec.name);
     end
-
-    cfg = cfg;
 end
 
 function mask = complete_case_mask(T, vars)
@@ -622,15 +625,33 @@ function pBoot = block_wild_history_pvalue( y, shock, preRV, K, testType, Fobs, 
     mu = mean(y, 'omitnan');
     u0 = y - mu;
 
+    Zfixed = [];
+
+    if testType == "extended_history"
+        Zfixed = nan(n, 2 * K);
+
+        for lag = 1:K
+            Zfixed(:, lag) = lag_vector(shock, lag);
+            Zfixed(:, K + lag) = lag_vector(preRV, lag);
+        end
+    end
+
     Fboot = nan(B, 1);
 
     for b = 1:B
         mult = block_rademacher(n, blockLength);
         yStar = mu + u0 .* mult;
 
-        [Yb, Zb] = build_history_design( yStar, shock, preRV, K, testType);
+        Zy = nan(n, K);
 
-        [Fb, ~] = joint_f_test(Yb, Zb);
+        for lag = 1:K
+            Zy(:, lag) = lag_vector(yStar, lag);
+        end
+
+        Zb = [Zy, Zfixed];
+        validRows = isfinite(yStar) & all(isfinite(Zb), 2);
+
+        [Fb, ~] = joint_f_test(yStar(validRows), Zb(validRows, :));
         Fboot(b) = Fb;
     end
 
@@ -707,7 +728,7 @@ function F = expanding_forecast(P, outcome, stateSpec, cfg)
     dates = unique(P.event_date(commonMask));
     dates = sort(dates);
 
-    F = empty_forecast_rows();
+    rowsCell = cell(numel(dates), 1);
 
     for j = 1:numel(dates)
         forecastDate = dates(j);
@@ -767,7 +788,15 @@ function F = expanding_forecast(P, outcome, stateSpec, cfg)
         tmp.k_state = repmat(kState, n, 1);
         tmp.k_state_history = repmat(kHist, n, 1);
 
-        F = [F; tmp];
+        rowsCell{j} = tmp;
+    end
+
+    keep = ~cellfun(@isempty, rowsCell);
+
+    if any(keep)
+        F = vertcat(rowsCell{keep});
+    else
+        F = empty_forecast_rows();
     end
 end
 
@@ -844,24 +873,12 @@ function bootMeans = circular_block_bootstrap_mean(x, B, blockLength)
     end
 
     nBlocks = ceil(n / blockLength);
-
-    for b = 1:B
-        sample = nan(nBlocks * blockLength, 1);
-        pos = 1;
-
-        for j = 1:nBlocks
-            start = randi(n);
-
-            for h = 0:(blockLength - 1)
-                idx = mod(start - 1 + h, n) + 1;
-                sample(pos) = x(idx);
-                pos = pos + 1;
-            end
-        end
-
-        sample = sample(1:n);
-        bootMeans(b) = mean(sample, 'omitnan');
-    end
+    starts = randi(n, nBlocks, B);
+    offsets = (0:(blockLength - 1))';
+    idx = mod(reshape(starts, 1, nBlocks * B) + offsets - 1, n) + 1;
+    sample = reshape(x(idx), blockLength * nBlocks, B);
+    sample = sample(1:n, :);
+    bootMeans = mean(sample, 1, 'omitnan')';
 end
 
 function L = local_whittle_grid(x, outcome, modelName, root, seriesType, cfg)
@@ -923,51 +940,6 @@ function [dHat, objectiveValue, m] = local_whittle_estimate(x, alpha, dBounds)
 
     options = optimset('Display', 'off', 'TolX', 1e-8);
     [dHat, objectiveValue] = fminbnd( objective, dBounds(1), dBounds(2), options);
-end
-
-function dt = parse_date_flex(x)
-
-    if isdatetime(x)
-        dt = dateshift(x, 'start', 'day');
-        return;
-    end
-
-    if isnumeric(x)
-        dt = dateshift(datetime(x, 'ConvertFrom', 'excel'), 'start', 'day');
-        return;
-    end
-
-    x = string(x);
-    dt = NaT(size(x));
-
-    formats = [ "yyyy-MM-dd", "dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd HH:mm:ss", "dd-MMM-yyyy" ];
-
-    for f = formats
-        remaining = isnat(dt) & ~ismissing(x) & strlength(strtrim(x)) > 0;
-
-        if ~any(remaining)
-            break;
-        end
-
-        try
-            parsed = datetime(x(remaining), 'InputFormat', f);
-            dt(remaining) = dateshift(parsed, 'start', 'day');
-        catch
-
-        end
-    end
-
-    remaining = isnat(dt) & ~ismissing(x) & strlength(strtrim(x)) > 0;
-
-    if any(remaining)
-        for j = find(remaining)'
-            try
-                dt(j) = dateshift(datetime(x(j)), 'start', 'day');
-            catch
-                dt(j) = NaT;
-            end
-        end
-    end
 end
 
 function T = empty_crossfit_table()
