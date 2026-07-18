@@ -46,9 +46,10 @@ cfg.outcomes = ["PR_abs_jump", "asinh_PR_rv", "asinh_PR_rsv_neg"];
 cfg.seed = 20260711;
 
 rng(cfg.seed);
+
 T = readtable(panelFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
-T.event_date = parse_date_flex(T.event_date);
+T.event_date = Parse_date_flexible(T.event_date);
 T.root_code = string(T.root_code);
 
 need = ["PR_abs_jump", "asinh_PR_rv", "asinh_PR_rsv_neg", "shock_target_10bp", "regime_hike", "target_x_hike", "state_pre_rv_z", "target_x_preRV", "state_pre_rsvneg_z", "target_x_preRSVneg", "M1_e_z", "target_x_M1", "ma3_target_10bp_z", "target_x_memory", "T_e", "target_x_T", "P_e", "target_x_P", "root_gg"];
@@ -94,30 +95,32 @@ for iy = 1:numel(cfg.outcomes)
     lamMax = max(lamMax, 1e-6);
     lambdaGrid = exp(linspace(log(lamMax), log(lamMax * cfg.lambda_ratio), cfg.nLambda));
 
-    cvMSE = nan(numel(lambdaGrid), 1);
-    cvSE = nan(numel(lambdaGrid), 1);
+    foldMSE = nan(cfg.nFolds, numel(lambdaGrid));
 
-    for il = 1:numel(lambdaGrid)
+    for f = 1:cfg.nFolds
 
-        lam = lambdaGrid(il);
-        foldMSE = nan(cfg.nFolds, 1);
+        idxTest = folds == f;
+        idxTrain = ~idxTest;
 
-        for f = 1:cfg.nFolds
+        Xtr = X(idxTrain, :);
+        ytr = yCtr(idxTrain);
+        Xte = X(idxTest, :);
+        yte = yCtr(idxTest);
 
-            idxTest = folds == f;
-            idxTrain = ~idxTest;
+        Ltr = normest(Xtr) ^ 2 / max(size(Xtr, 1), 1);
+        betaWarm = zeros(size(X, 2), 1);
 
-            betaStd = sgl_fista(X(idxTrain, :), yCtr(idxTrain), groupId, lam, cfg.alpha, cfg.maxIter, cfg.tol);
-            yHat = X(idxTest, :) * betaStd;
-
-            foldMSE(f) = mean((yCtr(idxTest) - yHat) .^ 2, 'omitnan');
+        for il = 1:numel(lambdaGrid)
+            betaWarm = sgl_fista(Xtr, ytr, groupId, lambdaGrid(il), cfg.alpha, cfg.maxIter, cfg.tol, betaWarm, Ltr);
+            yHat = Xte * betaWarm;
+            foldMSE(f, il) = mean((yte - yHat) .^ 2, 'omitnan');
         end
 
-        cvMSE(il) = mean(foldMSE, 'omitnan');
-        cvSE(il) = std(foldMSE, 0, 'omitnan') / sqrt(sum(~isnan(foldMSE)));
-
-        fprintf('  lambda %2d/%2d done\n', il, numel(lambdaGrid));
+        fprintf('  fold %2d/%2d done\n', f, cfg.nFolds);
     end
+
+    cvMSE = mean(foldMSE, 1, 'omitnan')';
+    cvSE = (std(foldMSE, 0, 1, 'omitnan') ./ sqrt(sum(~isnan(foldMSE), 1)))';
 
     [bestMSE, iMin] = min(cvMSE);
     mse1se = bestMSE + cvSE(iMin);
@@ -250,23 +253,28 @@ function folds = grouped_folds(clStr, nFolds)
 
     foldsEvent = mod((1:n)' - 1, nFolds) + 1;
 
-    map = containers.Map(cellstr(u(ord)), num2cell(foldsEvent));
+    eventFold = nan(n, 1);
+    eventFold(ord) = foldsEvent;
 
-    folds = nan(numel(clStr), 1);
-
-    for i = 1:numel(clStr)
-        folds(i) = map(char(clStr(i)));
-    end
+    [~, loc] = ismember(clStr, u);
+    folds = eventFold(loc);
 end
 
-function beta = sgl_fista(X, y, groupId, lambda, alpha, maxIter, tol)
+function beta = sgl_fista(X, y, groupId, lambda, alpha, maxIter, tol, beta0, Lpre)
 
     [n, p] = size(X);
 
-    L = normest(X) ^ 2 / n;
-    step = 1 / max(L, 1e-10);
+    if nargin < 9 || isempty(Lpre)
+        Lpre = normest(X) ^ 2 / n;
+    end
 
-    beta = zeros(p, 1);
+    if nargin < 8 || isempty(beta0)
+        beta0 = zeros(p, 1);
+    end
+
+    step = 1 / max(Lpre, 1e-10);
+
+    beta = beta0;
     z = beta;
     t = 1;
 
@@ -390,44 +398,4 @@ function [coefTbl, sumTbl] = post_selection_cluster_ols(y, Xraw, featureNames, c
     sumTbl.n_params = k;
     sumTbl.r2 = r2;
     sumTbl.adj_r2 = adj_r2;
-end
-
-function dt = parse_date_flex(x)
-
-    if isdatetime(x)
-        dt = dateshift(x, 'start', 'day');
-        return;
-    end
-
-    if isnumeric(x)
-        dt = dateshift(datetime(x, 'ConvertFrom', 'excel'), 'start', 'day');
-        return;
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    fmts = {'yyyy-MM-dd', 'dd/MM/yyyy', 'MM/dd/yyyy', 'dd-MMM-yyyy', 'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm', 'MM/dd/yyyy HH:mm'};
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-        try
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                best = dTry;
-            end
-        catch
-        end
-    end
-
-    dt = dateshift(best, 'start', 'day');
 end

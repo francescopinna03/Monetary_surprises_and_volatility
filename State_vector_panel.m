@@ -32,7 +32,7 @@ signalFile = fullfile(analysisDir, 'pr_signal_panel.csv');
 
 T = readtable(signalFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
-T.event_date = parse_date_flex(T.event_date);
+T.event_date = Parse_date_flexible(T.event_date);
 T.root_code = string(T.root_code);
 T.event_id = string(T.event_id);
 
@@ -243,46 +243,4 @@ function T = format_long(T)
     if ismember("trade_date", string(T.Properties.VariableNames))
         T.trade_date = string(T.trade_date, 'yyyy-MM-dd');
     end
-end
-
-function dt = parse_date_flex(x)
-
-    if isdatetime(x)
-        dt = dateshift(x, 'start', 'day');
-        return;
-    end
-
-    if isnumeric(x)
-        dt = dateshift(datetime(x, 'ConvertFrom', 'excel'), 'start', 'day');
-        return;
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    fmts = {'yyyy-MM-dd', 'dd/MM/yyyy', 'MM/dd/yyyy', 'dd-MMM-yyyy', 'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm', 'MM/dd/yyyy HH:mm'};
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-
-        try
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                best = dTry;
-            end
-
-        catch
-        end
-    end
-
-    dt = dateshift(best, 'start', 'day');
 end

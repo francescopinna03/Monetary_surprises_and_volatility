@@ -46,7 +46,7 @@ eampdCandidates{4} = fullfile(projectRoot, 'Raw', 'EA_MPD', 'ea_mpd_clean.csv');
 eampdCandidates{5} = fullfile(projectRoot, 'Raw', 'EA_MPD', 'Dataset_EA-MPD.csv');
 eampdCandidates{6} = fullfile(projectRoot, 'Raw', 'EA_MPD', 'Dataset_EA_MPD.csv');
 
-eampdFile = locate_first_existing(eampdCandidates);
+eampdFile = Locate_first_existing(eampdCandidates);
 
 P = readtable(panelFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
@@ -57,10 +57,10 @@ if ~isempty(missingVars)
     error('Mancano colonne in event_window_panel.csv: %s', strjoin(missingVars, ', '));
 end
 
-P.event_date = parse_date_flex(P.event_date);
-P.trade_date = parse_date_flex(P.trade_date);
-P.pr_datetime_local = parse_datetime_flex(P.pr_datetime_local);
-P.pc_datetime_local = parse_datetime_flex(P.pc_datetime_local);
+P.event_date = Parse_date_flexible(P.event_date);
+P.trade_date = Parse_date_flexible(P.trade_date);
+P.pr_datetime_local = Parse_datetime_flexible(P.pr_datetime_local);
+P.pc_datetime_local = Parse_datetime_flexible(P.pc_datetime_local);
 P.root_code = string(P.root_code);
 P.file_name_clean = string(P.file_name_clean);
 P.event_id = string(P.event_id);
@@ -75,7 +75,7 @@ for v = numVars
 end
 
 if ~islogical(P.PR_window_eligible)
-    P.PR_window_eligible = string_to_bool(P.PR_window_eligible);
+    P.PR_window_eligible = String_to_boolean(P.PR_window_eligible);
 end
 
 PR = P(P.PR_window_eligible, :);
@@ -180,18 +180,6 @@ if ~isempty(presentOis)
     end
 end
 
-function pathOut = locate_first_existing(candidates)
-
-    pathOut = "";
-
-    for i = 1:numel(candidates)
-        if exist(candidates{i}, 'file')
-            pathOut = string(candidates{i});
-            return;
-        end
-    end
-end
-
 function flag = rows_with_eampd_data(T)
 
     flag = false(height(T), 1);
@@ -221,14 +209,14 @@ function E = load_eampd_file(eampdFile)
     end
 
     names = string(T.Properties.VariableNames);
-    dateVar = find_col(names, ["event_date", "date", "Date", "meeting_date", "meetingday", "meeting_day", "govc_date", "eventday", "date_meeting"]);
+    dateVar = Find_column(names, ["event_date", "date", "Date", "meeting_date", "meetingday", "meeting_day", "govc_date", "eventday", "date_meeting"]);
 
     if strlength(dateVar) == 0
         error('Colonna data non trovata in EA-MPD.');
     end
 
     E = table();
-    E.event_date = parse_date_flex(T.(dateVar));
+    E.event_date = Parse_date_flexible(T.(dateVar));
 
     for col = names(names ~= dateVar)
         newName = matlab.lang.makeValidName("eampd_" + col);
@@ -370,22 +358,6 @@ function x = to_numeric_vector(x)
     x = str2double(string(x));
 end
 
-function out = find_col(allNames, candidates)
-
-    out = "";
-    a = lower(allNames);
-
-    for c = lower(candidates)
-
-        idx = find(a == c, 1);
-
-        if ~isempty(idx)
-            out = allNames(idx);
-            return;
-        end
-    end
-end
-
 function y = safe_log(x)
 
     y = nan(size(x));
@@ -412,96 +384,4 @@ function T = format_pr_panel_for_write(T)
             T.(c) = string(T.(c), 'yyyy-MM-dd HH:mm');
         end
     end
-end
-
-function dt = parse_date_flex(x)
-
-    if isdatetime(x)
-        dt = dateshift(x, 'start', 'day');
-        return;
-    end
-
-    if isnumeric(x)
-        dt = dateshift(datetime(x, 'ConvertFrom', 'excel'), 'start', 'day');
-        return;
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    fmts = {'yyyy-MM-dd', 'dd/MM/yyyy', 'MM/dd/yyyy', 'dd-MMM-yyyy', 'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm', 'MM/dd/yyyy HH:mm'};
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-
-        try
-
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                best = dTry;
-            end
-
-        catch
-        end
-    end
-
-    dt = dateshift(best, 'start', 'day');
-end
-
-function dt = parse_datetime_flex(x)
-
-    if isdatetime(x)
-        dt = x;
-        return;
-    end
-
-    if isnumeric(x)
-        dt = datetime(x, 'ConvertFrom', 'excel');
-        return;
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    fmts = {'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm', 'MM/dd/yyyy HH:mm', 'dd-MMM-yyyy HH:mm'};
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-
-        try
-
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                bestBad = nBad;
-                best = dTry;
-            end
-
-        catch
-        end
-    end
-
-    dt = best;
-end
-
-function y = string_to_bool(x)
-
-    x = lower(strtrim(string(x)));
-    y = x == "true" | x == "1";
 end

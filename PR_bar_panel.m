@@ -36,8 +36,8 @@ minBarsForBNS = 5;
 
 P = readtable(panelFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
-P.event_date = parse_date_flex(P.event_date);
-P.pr_datetime_local = parse_datetime_flex(P.pr_datetime_local);
+P.event_date = Parse_date_flexible(P.event_date);
+P.pr_datetime_local = Parse_datetime_flexible(P.pr_datetime_local);
 P.root_code = string(P.root_code);
 P.file_name_clean = string(P.file_name_clean);
 
@@ -49,9 +49,10 @@ for v = numVars
     end
 end
 
-barRows = {};
-sumRows = {};
-diagRows = {};
+barCell = cell(height(P), 1);
+sumCell = cell(height(P), 1);
+diagCell = cell(height(P), 1);
+fileCache = containers.Map('KeyType', 'char', 'ValueType', 'any');
 
 for i = 1:height(P)
 
@@ -69,15 +70,23 @@ for i = 1:height(P)
     filePath = locate_clean_file(cleanDir, cleanName);
 
     if strlength(filePath) == 0
-        diagRows(end + 1, :) = {i, eventDate, rootCode, cleanName, "file_not_found", nTarget, NaN, "", NaT, NaT, ""};
+        diagCell{i} = make_diag_row(i, eventDate, rootCode, cleanName, "file_not_found", nTarget, NaN, "", NaT, NaT, "");
         continue;
     end
 
-    C = read_clean_file(filePath);
+    cacheKey = char(filePath);
+
+    if isKey(fileCache, cacheKey)
+        C = fileCache(cacheKey);
+    else
+        C = read_clean_file(filePath);
+        fileCache(cacheKey) = C;
+    end
+
     [B, S] = extract_pr_window(C, prDT, nTarget, minBarsForBNS);
 
     if isempty(B)
-        diagRows(end + 1, :) = {i, eventDate, rootCode, cleanName, S.status, nTarget, 0, filePath, S.first_bar_time, S.last_bar_time, S.message};
+        diagCell{i} = make_diag_row(i, eventDate, rootCode, cleanName, S.status, nTarget, 0, filePath, S.first_bar_time, S.last_bar_time, S.message);
         continue;
     end
 
@@ -86,18 +95,56 @@ for i = 1:height(P)
     asinhRV = get_optional_numeric(P(i, :), "asinh_PR_rv");
     asinhRSVneg = get_optional_numeric(P(i, :), "asinh_PR_rsv_neg");
 
-    for j = 1:height(B)
-        barRows(end + 1, :) = {eventDate, eventId, rootCode, cleanName, filePath, prDT, j, B.bar_time(j), B.price_bar(j), B.prev_price_bar(j), B.r_bar(j), nTarget, height(B), S.bns_eligible, prRV, prNet, asinhRV, asinhRSVneg};
-    end
+    nB = height(B);
 
-    sumRows(end + 1, :) = {eventDate, eventId, rootCode, cleanName, filePath, prDT, S.status, nTarget, height(B), S.rv_from_bars, S.net_return_from_bars, prRV, prNet, abs(S.rv_from_bars - prRV), abs(S.net_return_from_bars - prNet), S.first_bar_time, S.last_bar_time, S.bns_eligible};
+    Bt = table();
+    Bt.event_date = repmat(eventDate, nB, 1);
+    Bt.event_id = repmat(eventId, nB, 1);
+    Bt.root_code = repmat(rootCode, nB, 1);
+    Bt.file_name_clean = repmat(cleanName, nB, 1);
+    Bt.source_file = repmat(filePath, nB, 1);
+    Bt.pr_datetime_local = repmat(prDT, nB, 1);
+    Bt.bar_index_in_pr = (1:nB)';
+    Bt.bar_time = B.bar_time;
+    Bt.price_bar = B.price_bar;
+    Bt.prev_price_bar = B.prev_price_bar;
+    Bt.r_bar = B.r_bar;
+    Bt.n_bars_target = repmat(nTarget, nB, 1);
+    Bt.n_bars_extracted = repmat(nB, nB, 1);
+    Bt.bns_eligible = repmat(S.bns_eligible, nB, 1);
+    Bt.PR_rv_panel = repmat(prRV, nB, 1);
+    Bt.PR_net_log_return_panel = repmat(prNet, nB, 1);
+    Bt.asinh_PR_rv_panel = repmat(asinhRV, nB, 1);
+    Bt.asinh_PR_rsv_neg_panel = repmat(asinhRSVneg, nB, 1);
+    barCell{i} = Bt;
 
-    diagRows(end + 1, :) = {i, eventDate, rootCode, cleanName, S.status, nTarget, height(B), filePath, S.first_bar_time, S.last_bar_time, S.message};
+    St = table();
+    St.event_date = eventDate;
+    St.event_id = eventId;
+    St.root_code = rootCode;
+    St.file_name_clean = cleanName;
+    St.source_file = filePath;
+    St.pr_datetime_local = prDT;
+    St.status = S.status;
+    St.n_bars_target = nTarget;
+    St.n_bars_extracted = nB;
+    St.rv_from_bars = S.rv_from_bars;
+    St.net_return_from_bars = S.net_return_from_bars;
+    St.PR_rv_panel = prRV;
+    St.PR_net_log_return_panel = prNet;
+    St.absdiff_rv = abs(S.rv_from_bars - prRV);
+    St.absdiff_net_return = abs(S.net_return_from_bars - prNet);
+    St.first_bar_time = S.first_bar_time;
+    St.last_bar_time = S.last_bar_time;
+    St.bns_eligible = S.bns_eligible;
+    sumCell{i} = St;
+
+    diagCell{i} = make_diag_row(i, eventDate, rootCode, cleanName, S.status, nTarget, nB, filePath, S.first_bar_time, S.last_bar_time, S.message);
 end
 
-barPanel = rows_to_bar_table(barRows);
-sumPanel = rows_to_summary_table(sumRows);
-diagPanel = rows_to_diag_table(diagRows);
+barPanel = stack_tables(barCell, rows_to_bar_table({}));
+sumPanel = stack_tables(sumCell, rows_to_summary_table({}));
+diagPanel = stack_tables(diagCell, rows_to_diag_table({}));
 
 barFile = fullfile(analysisDir, 'pr_bar_panel.csv');
 sumFile = fullfile(analysisDir, 'pr_bar_panel_summary.csv');
@@ -149,7 +196,7 @@ function C = read_clean_file(filePath)
 
     T = readtable(filePath, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
-    T.Time = parse_datetime_flex(T.Time);
+    T.Time = Parse_datetime_flexible(T.Time);
 
     if ~isnumeric(T.Latest)
         T.Latest = str2double(T.Latest);
@@ -245,6 +292,33 @@ function x = get_optional_numeric(row, varName)
     end
 end
 
+function row = make_diag_row(panelRow, eventDate, rootCode, cleanName, status, nTarget, nExtracted, sourceFile, firstBar, lastBar, message)
+
+    row = table();
+    row.panel_row = panelRow;
+    row.event_date = eventDate;
+    row.root_code = string(rootCode);
+    row.file_name_clean = string(cleanName);
+    row.status = string(status);
+    row.n_bars_target = nTarget;
+    row.n_bars_extracted = nExtracted;
+    row.source_file = string(sourceFile);
+    row.first_bar_time = firstBar;
+    row.last_bar_time = lastBar;
+    row.message = string(message);
+end
+
+function T = stack_tables(cellOfTables, emptyTable)
+
+    keep = ~cellfun(@isempty, cellOfTables);
+
+    if any(keep)
+        T = vertcat(cellOfTables{keep});
+    else
+        T = emptyTable;
+    end
+end
+
 function T = rows_to_bar_table(rows)
 
     names = {'event_date', 'event_id', 'root_code', 'file_name_clean', 'source_file', 'pr_datetime_local', 'bar_index_in_pr', 'bar_time', 'price_bar', 'prev_price_bar', 'r_bar', 'n_bars_target', 'n_bars_extracted', 'bns_eligible', 'PR_rv_panel', 'PR_net_log_return_panel', 'asinh_PR_rv_panel', 'asinh_PR_rsv_neg_panel'};
@@ -287,51 +361,4 @@ function T = format_dates(T)
             T.(v) = string(T.(v), 'yyyy-MM-dd HH:mm:ss');
         end
     end
-end
-
-function dt = parse_date_flex(x)
-
-    dt = parse_datetime_flex(x);
-    dt = dateshift(dt, 'start', 'day');
-end
-
-function dt = parse_datetime_flex(x)
-
-    if isdatetime(x)
-        dt = x;
-        return;
-    end
-
-    if isnumeric(x)
-        dt = datetime(x, 'ConvertFrom', 'excel');
-        return;
-    end
-
-    if iscell(x)
-        x = string(x);
-    end
-
-    if ischar(x)
-        x = string(x);
-    end
-
-    fmts = {'yyyy-MM-dd HH:mm:ss', 'yyyy-MM-dd HH:mm', 'dd/MM/yyyy HH:mm:ss', 'dd/MM/yyyy HH:mm', 'MM/dd/yyyy HH:mm:ss', 'MM/dd/yyyy HH:mm', 'yyyy-MM-dd', 'dd/MM/yyyy', 'MM/dd/yyyy', 'dd-MMM-yyyy HH:mm:ss', 'dd-MMM-yyyy HH:mm'};
-
-    best = NaT(size(x));
-    bestBad = inf;
-
-    for i = 1:numel(fmts)
-        try
-            dTry = datetime(x, 'InputFormat', fmts{i});
-            nBad = sum(isnat(dTry));
-
-            if nBad < bestBad
-                best = dTry;
-                bestBad = nBad;
-            end
-        catch
-        end
-    end
-
-    dt = best;
 end

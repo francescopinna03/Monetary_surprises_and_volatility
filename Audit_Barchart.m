@@ -229,7 +229,7 @@ function a = audit_file(fpath)
         return;
     end
 
-dataText = strjoin(dataLines, newline);
+    dataText = strjoin(dataLines, newline);
 
 try
     C = textscan(dataText, '%q%q%q%q%q%q%q%q', 'Delimiter', ',', 'EndOfLine', '\n', 'ReturnOnError', false);
