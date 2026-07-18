@@ -28,6 +28,7 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+Require_time_alignment_manifest(projectRoot);
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 panelFile = fullfile(analysisDir, 'pr_state_dependent_panel.csv');

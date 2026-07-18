@@ -3,6 +3,18 @@ diary(fullfile(fileparts(mfilename('fullpath')), 'pipeline_run.log'));
 fprintf('Pipeline start %s\n', string(datetime('now')));
 fprintf('Data root: %s\n', Get_project_root());
 
+% The complete replication is an immutable final run.  Reduced-draw
+% overrides are accepted only by the dedicated smoke-test wrappers; they must
+% never leak into Run_pipeline through a caller's shell environment.
+setenv('ANNOUNCEMENT_VALIDATION_DRAWS', '999');
+setenv('ANNOUNCEMENT_ROTATION_DRAWS', '999');
+setenv('ANNOUNCEMENT_RESOLUTION_MODE', 'final');
+setenv('ANNOUNCEMENT_RESOLUTION_DRAWS', '999');
+fprintf('Locked inference draws: Steps 19--21 = 999; Step 21 mode = final\n');
+
+fprintf('\n[preflight] Time_alignment_self_test\n');
+Time_alignment_self_test();
+
 fprintf('\n[ 1/21] Audit_Barchart\n');
 Audit_Barchart;
 
@@ -14,6 +26,9 @@ Contract_event_day;
 
 fprintf('\n[ 4/21] Event_panel_construction\n');
 Event_panel_construction;
+
+fprintf('\n[audit] Event_time_alignment_audit\n');
+Event_time_alignment_audit;
 
 fprintf('\n[ 5/21] Event_windows\n');
 Event_windows;

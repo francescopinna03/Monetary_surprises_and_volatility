@@ -22,6 +22,7 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+Require_time_alignment_manifest(projectRoot);
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 windowFile = fullfile(analysisDir, 'announcement_counterfactual_windows.csv');
 
@@ -127,6 +128,7 @@ function W = load_validation_panel(filePath)
 
     W = readtable(filePath, 'TextType', 'string', 'VariableNamingRule', 'preserve');
     required = ["trade_date", "root_code", "is_event", "window_eligible", ...
+        "pseudo_pr_datetime_utc", ...
         "log_BV_pre", "log_BV_post", "log_RV_pre", "log_RV_post", ...
         "jump_share_pre", "jump_share_post", "slow5_log_rv", ...
         "clock_late", "weekday_number", "month_number", "year_number", ...
@@ -140,7 +142,7 @@ function W = load_validation_panel(filePath)
     W.trade_date = Parse_date_flexible(W.trade_date);
     W.root_code = lower(string(W.root_code));
 
-    numericVars = setdiff(required, ["trade_date", "root_code"]);
+    numericVars = setdiff(required, ["trade_date", "root_code", "pseudo_pr_datetime_utc"]);
     optionalNumeric = ["abnormal_log_BV", "abnormal_log_RV", "abnormal_jump_share"];
     numericVars = unique([numericVars, optionalNumeric]);
 

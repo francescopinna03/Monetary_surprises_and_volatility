@@ -21,6 +21,19 @@ if [ ! -f "$data_root/Output/analysis/announcement_rotation_date_matrices.csv" ]
     exit 2
 fi
 
+manifest="$data_root/Output/manifests/time_alignment_manifest.csv"
+date_matrix="$data_root/Output/analysis/announcement_rotation_date_matrices.csv"
+
+if [ ! -f "$manifest" ] || ! grep -q 'timezone_v1' "$manifest" || ! grep -q 'complete' "$manifest"; then
+    echo "Corrected timezone_v1 manifest not found. Rerun the corrected pipeline." >&2
+    exit 2
+fi
+
+if ! head -1 "$date_matrix" | grep -q 'pseudo_pr_datetime_utc'; then
+    echo "Step-20 input predates the UTC correction. Rerun Announcement_risk_rotation." >&2
+    exit 2
+fi
+
 case "$mode" in
     smoke)
         draws="${3:-49}"

@@ -34,6 +34,7 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+Require_time_alignment_manifest(projectRoot);
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 eventFile = fullfile(analysisDir, 'event_state_panel.csv');

@@ -23,6 +23,13 @@ fi
 export ECONOMETRICS_DATA_ROOT="$data_root"
 export STEP21_GIT_SHA="$(git -C "$repo_dir" rev-parse HEAD 2>/dev/null || printf 'unavailable')"
 
+# Run_pipeline.m repeats this lock inside MATLAB so that both supported entry
+# points (shell and direct MATLAB invocation) produce the same final run.
+export ANNOUNCEMENT_VALIDATION_DRAWS=999
+export ANNOUNCEMENT_ROTATION_DRAWS=999
+export ANNOUNCEMENT_RESOLUTION_MODE=final
+export ANNOUNCEMENT_RESOLUTION_DRAWS=999
+
 if command -v matlab >/dev/null 2>&1; then
     matlab_bin="matlab"
 else

@@ -1,6 +1,12 @@
 # Monetary Surprises and Volatility
 
-> **Research-reset status.** Steps 1--17 reproduce the original state-dependent-volatility project. Steps 18--19 show that the monetary-surprise slope and its state gradient are not robustly identified. Step 20 tests whether ECB announcements reallocate high-frequency risk between equity and sovereign-bond futures. Step 21 subjects the identified negative risk direction to common-support trimming and cross-fitted bias correction. The legacy results are retained for auditability; they are not treated as the headline evidence of the revised project.
+> **Timestamp-correction status (2026-07-18).** The raw Barchart timestamps are
+> America/Chicago wall clocks, while the ECB calendar contains Europe/Berlin
+> wall clocks. Earlier versions compared them without conversion and therefore
+> measured windows generally six or seven hours after the announcement. All
+> window-dependent results from Steps 5--21, including the Step-21 decision,
+> are superseded pending a clean rerun. The frozen correction is documented in
+> `TIMEZONE_CORRECTION_PROTOCOL.md`.
 
 This repository contains the MATLAB code used to construct the empirical dataset and to estimate the econometric specifications in the project *State-Dependent Transmission of ECB Monetary Surprises to Intraday Volatility*. The computational workflow is designed as a transparent event-study pipeline. Starting from raw intraday futures files and ECB monetary policy dates, the code builds cleaned five-minute futures panels, selects the most reliable contracts around each announcement, extracts press-release windows, merges monetary surprise measures, constructs event-level state variables and estimates a sequence of state-dependent volatility models.
 
@@ -18,13 +24,35 @@ Second, the event-study layer links the cleaned intraday data to ECB monetary po
 
 Third, the econometric layer estimates the response of intraday volatility to monetary policy surprises. The baseline shock is the press-release target surprise, typically measured by a high-frequency OIS change and scaled in units of 10 basis points. The main specifications allow the slope of the volatility response to depend on pre-announcement market states, including the hiking regime, pre-announcement realized volatility, downside volatility and monetary-policy memory.
 
+### Timestamp conventions
+
+The pipeline uses one frozen temporal schema, `timezone_v1`. Barchart `Time`
+values are first localized in `America/Chicago`; ECB decision and press
+conference clocks are localized in `Europe/Berlin`; both are then converted to
+UTC with IANA daylight-saving rules. Cleaned files store the resulting UTC
+clock in `Time`, and event panels retain separate `*_datetime_local` and
+`*_datetime_utc` columns. Market comparisons use only the UTC columns.
+
+`Time_alignment_self_test.m` checks ordinary and US--Europe DST-mismatch dates
+before the pipeline starts. Step 2 writes
+`Output/manifests/time_alignment_manifest.csv`, and downstream scripts refuse
+legacy intermediate files without the matching manifest. After Step 4,
+`Event_time_alignment_audit.m` reports the exact corrected candle, +/-5 minute
+perturbations and the candle selected by the legacy naive-clock code for every
+preferred event contract.
+
 ## Notes on reproducibility
 
 The code is written in MATLAB and uses standard table, datetime and matrix operations. 
 
 All scripts resolve the location of the data package through the shared helper `Get_project_root.m`, so no source file needs to be edited before replication. The helper looks for the data folder in the following order: the environment variable `ECONOMETRICS_DATA_ROOT` (if set), a folder named `Econometrics_data` next to the MATLAB scripts, and finally a folder named `Econometrics_data` in the current working directory. If none of these resolves to a folder containing the expected `Raw/` subfolder, the scripts stop with an explicit error message.
 
-Common utilities are shared function files in the repository root: `Parse_date_flexible.m`, `Parse_datetime_flexible.m`, `String_to_boolean.m`, `Locate_first_existing.m` and `Find_column.m`. They are found automatically when MATLAB runs from the repository folder or when the folder is on the MATLAB path.
+Common utilities are shared function files in the repository root, including
+`Parse_date_flexible.m`, `Parse_datetime_flexible.m`, `Parse_utc_datetime.m`,
+`Wall_clock_to_utc.m`, `Time_alignment_config.m`, `String_to_boolean.m`,
+`Locate_first_existing.m` and `Find_column.m`. They are found automatically
+when MATLAB runs from the repository folder or when the folder is on the
+MATLAB path.
 
 The stochastic steps are seeded for exact reproducibility. `Hierarchical_shrinkage.m`, `Quasi_markov_residual_predictability.m` and Steps 18--21 each declare their seeds in the corresponding script. Changing a seed changes bootstrap or placebo results within simulation noise; keeping the defaults reproduces the reported draws.
 
@@ -54,13 +82,27 @@ From the terminal, without opening the MATLAB desktop:
 
 The shell wrapper requires and validates the data-root argument, uses `matlab` from the PATH or the newest installation found in `/Applications`, exports `ECONOMETRICS_DATA_ROOT`, and runs the pipeline headless with `matlab -batch`. Direct MATLAB execution may instead use `setenv` or place `Econometrics_data` next to the scripts.
 
+Before launching the stochastic Steps 6--21 after the timestamp correction,
+run the data-engineering smoke test:
+
+```bash
+./Run_time_alignment_smoke.sh /path/to/Econometrics_data
+```
+
+It executes the deterministic DST test and Steps 1--5, including the
+event-level clock audit. Inspect
+`Output/diagnostics/time_alignment_event_audit_summary.csv` and
+`Output/manifests/time_alignment_manifest.csv` before running the full
+pipeline.
+
 | Step | File | Role |
 | --- | --- | --- |
 | 1 | `Audit_Barchart.m` | Audits the raw Barchart intraday futures files. It checks filename structure, contract metadata, headers, footers, timestamps, duplicates, missing fields and OHLC consistency. |
-| 2 | `Clean_raw_files.m` | Driver script that applies the cleaning helper to all raw Barchart CSV files in `Raw/Barchart_futures`. It writes cleaned files and cleaning logs. |
+| 2 | `Clean_raw_files.m` | Driver script that applies the cleaning helper to all raw Barchart CSV files in `Raw/Barchart_futures`, converts America/Chicago wall clocks to UTC, and writes cleaned files, logs and the temporal manifest. |
 | 2 helper | `clean_single_barchart_file.m` | Helper function for cleaning one raw Barchart file. It is called repeatedly by `Clean_raw_files.m` and is not meant to be run as a standalone script. |
 | 3 | `Contract_event_day.m` | Builds the contract-day quality panel from cleaned files. It computes liquidity, coverage, gap and realized-measure diagnostics. |
-| 4 | `Event_panel_construction.m` | Constructs the ECB event panel and links monetary policy dates to available futures contract-days. |
+| 4 | `Event_panel_construction.m` | Constructs the ECB event panel, converts Europe/Berlin event clocks to UTC, and links monetary policy dates to available futures contract-days. |
+| 4 audit | `Event_time_alignment_audit.m` | Compares corrected, +/-5-minute and legacy event bars without selecting a specification from their outcomes. |
 | 5 | `Event_windows.m` | Extracts intraday PR, PC and announcement windows from the preferred futures contracts. |
 | 6 | `Press_release_panel.m` | Builds the baseline press-release panel and merges it with EA-MPD-style monetary surprise data. |
 | 7 | `Regression_fractional.m` | Estimates fractional-response QMLE models for the negative semivariance share. |
@@ -113,7 +155,15 @@ The validation can be run without repeating Steps 1--18. `./Run_counterfactual_v
 
 The additive one-shock null implies that the average abnormal matrix is positive semidefinite and has rank at most one. The experiment therefore reports both eigenvalues and eigenvectors. A positive largest eigenvalue and a negative smallest eigenvalue, supported by event-date bootstrap intervals and matched placebos, is the pre-declared signature of risk creation in one cross-asset direction and uncertainty resolution in another. The squared target surprise is not used to construct the matrix or select controls; it is retained only for secondary mechanism checks.
 
-Step 20 can be run without repeating the preceding stages once `announcement_counterfactual_windows.csv` exists. Its explicit data-root argument may point to an incremental project directory containing `Output/analysis` and `Output/cleaned`; Step 20 does not require `Raw/`. `./Run_risk_rotation.sh /project/root 19` performs a 19-draw smoke test; omitting the final argument runs the 999-draw experiment. Its six outputs use the prefix `announcement_rotation_`: the date matrices, matched rows, summary, event bootstrap, matched-placebo distribution and leave-one-event-out spectrum.
+Step 20 can be run without repeating the preceding stages only when the
+corrected `announcement_counterfactual_windows.csv` and the matching
+`timezone_v1` manifest already exist. Its explicit data-root argument may
+point to an incremental project directory containing `Output/analysis`,
+`Output/cleaned` and `Output/manifests`; Step 20 does not require `Raw/`.
+`./Run_risk_rotation.sh /project/root 19` performs a 19-draw smoke test;
+omitting the final argument runs the 999-draw experiment. Its six outputs use
+the prefix `announcement_rotation_`: the date matrices, matched rows, summary,
+event bootstrap, matched-placebo distribution and leave-one-event-out spectrum.
 
 ### Bias-adjusted risk-resolution test
 

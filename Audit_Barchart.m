@@ -27,6 +27,7 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+timeCfg = Time_alignment_config();
 
 rawDir = fullfile(projectRoot, 'Raw', 'Barchart_futures');
 manifestDir = fullfile(projectRoot, 'Output', 'manifests');
@@ -121,7 +122,13 @@ for i = 1:nFiles
     end
 end
 
-manifest = table(file_name, file_size_mb, parse_ok, root_code, expiry_code, contract_year, bar_minutes, download_date, header_ok, footer_present, n_rows, first_ts, last_ts, sort_order, n_duplicates, n_bad_dt, n_missing_core, n_nonpositive_price, n_negative_volume, ohlc_ok, status, flags);
+raw_time_zone = repmat(timeCfg.raw_time_zone, nFiles, 1);
+timestamp_semantics = repmat("provider wall clock before UTC conversion", nFiles, 1);
+manifest = table(file_name, file_size_mb, parse_ok, root_code, expiry_code, ...
+    contract_year, bar_minutes, download_date, raw_time_zone, ...
+    timestamp_semantics, header_ok, footer_present, n_rows, first_ts, last_ts, ...
+    sort_order, n_duplicates, n_bad_dt, n_missing_core, ...
+    n_nonpositive_price, n_negative_volume, ohlc_ok, status, flags);
 manifest = sortrows(manifest, {'root_code', 'contract_year', 'expiry_code'});
 
 roots = {'fx'; 'gg'};

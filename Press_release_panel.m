@@ -31,6 +31,7 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+Require_time_alignment_manifest(projectRoot);
 
 windowDir = fullfile(projectRoot, 'Output', 'event_windows');
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
@@ -50,7 +51,11 @@ eampdFile = Locate_first_existing(eampdCandidates);
 
 P = readtable(panelFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
-requiredVars = ["event_date", "trade_date", "event_id", "root_code", "file_name_clean", "expiry_code", "contract_year", "pr_datetime_local", "pc_datetime_local", "PR_n_obs_bars", "PR_pct_expected_bars", "PR_share_low_volume", "PR_max_gap_minutes", "PR_window_eligible", "PR_rv", "PR_rsv_pos", "PR_rsv_neg", "PR_net_log_return"];
+requiredVars = ["event_date", "trade_date", "event_id", "root_code", "file_name_clean", ...
+    "expiry_code", "contract_year", "pr_datetime_local", "pc_datetime_local", ...
+    "pr_datetime_utc", "pc_datetime_utc", "PR_n_obs_bars", ...
+    "PR_pct_expected_bars", "PR_share_low_volume", "PR_max_gap_minutes", ...
+    "PR_window_eligible", "PR_rv", "PR_rsv_pos", "PR_rsv_neg", "PR_net_log_return"];
 missingVars = requiredVars(~ismember(requiredVars, string(P.Properties.VariableNames)));
 
 if ~isempty(missingVars)
@@ -61,6 +66,8 @@ P.event_date = Parse_date_flexible(P.event_date);
 P.trade_date = Parse_date_flexible(P.trade_date);
 P.pr_datetime_local = Parse_datetime_flexible(P.pr_datetime_local);
 P.pc_datetime_local = Parse_datetime_flexible(P.pc_datetime_local);
+P.pr_datetime_utc = Parse_utc_datetime(P.pr_datetime_utc);
+P.pc_datetime_utc = Parse_utc_datetime(P.pc_datetime_utc);
 P.root_code = string(P.root_code);
 P.file_name_clean = string(P.file_name_clean);
 P.event_id = string(P.event_id);
@@ -378,7 +385,7 @@ function T = format_pr_panel_for_write(T)
         end
     end
 
-    for c = ["pr_datetime_local", "pc_datetime_local"]
+    for c = ["pr_datetime_local", "pc_datetime_local", "pr_datetime_utc", "pc_datetime_utc"]
 
         if ismember(c, string(T.Properties.VariableNames))
             T.(c) = string(T.(c), 'yyyy-MM-dd HH:mm');

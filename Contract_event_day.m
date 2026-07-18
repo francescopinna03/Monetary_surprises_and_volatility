@@ -23,9 +23,11 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+Require_time_alignment_manifest(projectRoot);
 
 cleanDir = fullfile(projectRoot, 'Output', 'cleaned');
 diagDir = fullfile(projectRoot, 'Output', 'diagnostics');
+cleaningSummaryFile = fullfile(diagDir, 'cleaning_file_summary.csv');
 
 if ~exist(diagDir, 'dir'); mkdir(diagDir); end
 
@@ -37,6 +39,30 @@ params.very_long_gap_minutes = 60;
 
 files = dir(fullfile(cleanDir, '*_clean.csv'));
 files = files(~[files.isdir]);
+
+if exist(cleaningSummaryFile, 'file') ~= 2
+    error('Cleaning inventory not found: %s', cleaningSummaryFile);
+end
+
+inventory = readtable(cleaningSummaryFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
+if ~ismember("file_name", string(inventory.Properties.VariableNames))
+    error('Cleaning inventory does not contain file_name: %s', cleaningSummaryFile);
+end
+
+expectedClean = regexprep(string(inventory.file_name), '\.csv$', '_clean.csv', 'ignorecase');
+availableClean = string({files.name})';
+missingClean = expectedClean(~ismember(expectedClean, availableClean));
+
+if ~isempty(missingClean)
+    error('Cleaned files missing from the completed inventory: %s', strjoin(missingClean, ', '));
+end
+
+extraClean = availableClean(~ismember(availableClean, expectedClean));
+if ~isempty(extraClean)
+    fprintf('Ignoring %d stale cleaned files not listed in the current inventory.\n', numel(extraClean));
+end
+
+files = files(ismember(availableClean, expectedClean));
 nFiles = numel(files);
 
 fprintf('Found %d cleaned CSV files.\n\n', nFiles);
@@ -159,9 +185,7 @@ function T = read_cleaned_file(fpath, opts)
         error('Column "Time" not found in %s', fpath);
     end
 
-    if ~isdatetime(T.Time)
-        T.Time = datetime(T.Time, 'InputFormat', 'yyyy-MM-dd HH:mm');
-    end
+    T.Time = Parse_utc_datetime(T.Time);
 end
 
 function dayTbl = build_day_quality_table(T, meta, params)
