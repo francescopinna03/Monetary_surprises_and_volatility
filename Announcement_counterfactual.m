@@ -6,7 +6,8 @@
 %
 % The design uses the full cleaned intraday panel, not only ECB dates. For
 % every trading day and futures family it assigns the scheduled ECB release
-% clock, selects the contract using information available before that clock,
+% clock in Europe/Berlin, converts it to canonical UTC, selects the contract
+% using information available before that clock,
 % and constructs the same non-overlapping windows:
 %
 %   pre-announcement base : return endpoints from -55 to -5 minutes
@@ -36,6 +37,8 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+Require_time_alignment_manifest(projectRoot);
+timeCfg = Time_alignment_config();
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 diagnosticsDir = fullfile(projectRoot, 'Output', 'diagnostics');
@@ -74,6 +77,7 @@ cfg.seed = 20260717;
 cfg.equivalenceLogMargin = log(1.25);
 cfg.minimumControlRows = 100;
 cfg.minimumEventClusters = 30;
+cfg.eventTimeZone = timeCfg.event_time_zone;
 
 rng(cfg.seed, 'twister');
 
@@ -190,7 +194,7 @@ end
 function E = load_event_calendar(filePath)
 
     E = readtable(filePath, 'TextType', 'string', 'VariableNamingRule', 'preserve');
-    required = ["event_date", "event_id", "pr_datetime_local"];
+    required = ["event_date", "event_id", "pr_datetime_local", "pr_datetime_utc"];
     missing = required(~ismember(required, string(E.Properties.VariableNames)));
 
     if ~isempty(missing)
@@ -199,8 +203,9 @@ function E = load_event_calendar(filePath)
 
     E.event_date = Parse_date_flexible(E.event_date);
     E.pr_datetime_local = Parse_datetime_flexible(E.pr_datetime_local);
+    E.pr_datetime_utc = Parse_utc_datetime(E.pr_datetime_utc);
     E.event_id = string(E.event_id);
-    E = E(~isnat(E.event_date) & ~isnat(E.pr_datetime_local), :);
+    E = E(~isnat(E.event_date) & ~isnat(E.pr_datetime_local) & ~isnat(E.pr_datetime_utc), :);
     E = sortrows(E, 'event_date');
 
     [~, keep] = unique(E.event_date, 'stable');
@@ -254,10 +259,11 @@ function [W, candidateDiagnostics] = build_counterfactual_windows(Q, E, cleanDir
         [isEvent, eventLoc] = ismember(string(tradeDate, 'yyyy-MM-dd'), eventDateString);
 
         if isEvent
-            pseudoTime = E.pr_datetime_local(eventLoc);
+            pseudoTimeLocal = E.pr_datetime_local(eventLoc);
+            pseudoTimeUtc = E.pr_datetime_utc(eventLoc);
             eventId = E.event_id(eventLoc);
         else
-            pseudoTime = scheduled_release_datetime(tradeDate, cfg);
+            [pseudoTimeLocal, pseudoTimeUtc] = scheduled_release_datetimes(tradeDate, cfg);
             eventId = "CONTROL_" + string(tradeDate, 'yyyyMMdd');
         end
 
@@ -285,7 +291,7 @@ function [W, candidateDiagnostics] = build_counterfactual_windows(Q, E, cleanDir
                 fileCache(cacheKey) = C;
             end
 
-            measures(j) = compute_windows(C, pseudoTime, cfg);
+            measures(j) = compute_windows(C, pseudoTimeUtc, cfg);
             preCoverage(j) = measures(j).preCoverage;
             preVolume(j) = measures(j).preVolume;
             preEligible(j) = measures(j).preCoverage >= cfg.minPreCoverage & measures(j).nPreReturns >= cfg.minReturnsForBV & isfinite(measures(j).BVpre);
@@ -313,12 +319,15 @@ function [W, candidateDiagnostics] = build_counterfactual_windows(Q, E, cleanDir
             status = "ok";
         end
 
-        windowCells{g} = make_window_row(Cands(selected, :), tradeDate, rootCode, pseudoTime, eventId, isEvent, status, selectedMeasure, selectedPreEligible, selectedPostEligible, cfg);
+        windowCells{g} = make_window_row(Cands(selected, :), tradeDate, rootCode, ...
+            pseudoTimeLocal, pseudoTimeUtc, eventId, isEvent, status, ...
+            selectedMeasure, selectedPreEligible, selectedPostEligible, cfg);
 
         D = table();
         D.trade_date = repmat(tradeDate, nC, 1);
         D.root_code = repmat(rootCode, nC, 1);
-        D.pseudo_pr_datetime = repmat(pseudoTime, nC, 1);
+        D.pseudo_pr_datetime_local = repmat(pseudoTimeLocal, nC, 1);
+        D.pseudo_pr_datetime_utc = repmat(pseudoTimeUtc, nC, 1);
         D.is_event = repmat(isEvent, nC, 1);
         D.file_name_clean = Cands.file_name_clean;
         D.file_found = fileFound;
@@ -341,13 +350,15 @@ function [W, candidateDiagnostics] = build_counterfactual_windows(Q, E, cleanDir
     candidateDiagnostics = sortrows(candidateDiagnostics, {'trade_date', 'root_code', 'selected', 'pre_coverage'}, {'ascend', 'ascend', 'descend', 'descend'});
 end
 
-function dt = scheduled_release_datetime(tradeDate, cfg)
+function [dtLocal, dtUtc] = scheduled_release_datetimes(tradeDate, cfg)
 
     if tradeDate < cfg.scheduleCutoff
-        dt = tradeDate + cfg.earlyReleaseTime;
+        dtLocal = tradeDate + cfg.earlyReleaseTime;
     else
-        dt = tradeDate + cfg.lateReleaseTime;
+        dtLocal = tradeDate + cfg.lateReleaseTime;
     end
+
+    dtUtc = Wall_clock_to_utc(dtLocal, cfg.eventTimeZone);
 end
 
 function C = read_clean_file(filePath)
@@ -360,7 +371,7 @@ function C = read_clean_file(filePath)
         error('Missing columns in %s: %s', filePath, strjoin(missing, ', '));
     end
 
-    T.Time = Parse_datetime_flexible(T.Time);
+    T.Time = Parse_utc_datetime(T.Time);
 
     if ~isnumeric(T.Latest); T.Latest = str2double(T.Latest); end
     if ~isnumeric(T.Volume); T.Volume = str2double(T.Volume); end
@@ -466,7 +477,7 @@ function M = empty_measure_struct()
     M = struct('preCoverage', NaN, 'postCoverage', NaN, 'nPreExpected', NaN, 'nPostExpected', NaN, 'nPreReturns', NaN, 'nPostReturns', NaN, 'preVolume', NaN, 'RVpre', NaN, 'BVpre', NaN, 'JVpre', NaN, 'jumpSharePre', NaN, 'RVpost', NaN, 'BVpost', NaN, 'JVpost', NaN, 'jumpSharePost', NaN);
 end
 
-function R = make_window_row(candidate, tradeDate, rootCode, pseudoTime, eventId, isEvent, status, M, preEligible, postEligible, cfg)
+function R = make_window_row(candidate, tradeDate, rootCode, pseudoTimeLocal, pseudoTimeUtc, eventId, isEvent, status, M, preEligible, postEligible, cfg)
 
     R = table();
     R.trade_date = tradeDate;
@@ -474,7 +485,8 @@ function R = make_window_row(candidate, tradeDate, rootCode, pseudoTime, eventId
     R.event_id = string(eventId);
     R.root_code = string(rootCode);
     R.file_name_clean = string(candidate.file_name_clean);
-    R.pseudo_pr_datetime = pseudoTime;
+    R.pseudo_pr_datetime_local = pseudoTimeLocal;
+    R.pseudo_pr_datetime_utc = pseudoTimeUtc;
     R.is_event = logical(isEvent);
     R.selection_status = string(status);
     R.pre_eligible = logical(preEligible);

@@ -5,8 +5,9 @@
 % calendar together with the contract-day quality panel produced in the
 % previous step.
 %
-% Moreover, it standardizes ECB event dates, press-release times and press
-% conference times, then matches event dates with available futures
+% Moreover, it standardizes ECB event dates, localizes press-release and press
+% conference clocks in Europe/Berlin, converts them to canonical UTC, then
+% matches event dates with available futures
 % contract-days and evaluates all candidate contracts by liquidity, observed
 % bars, low-volume share and expected gap coverage.
 %
@@ -26,6 +27,8 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+Require_time_alignment_manifest(projectRoot);
+timeCfg = Time_alignment_config();
 
 diagDir = fullfile(projectRoot, 'Output', 'diagnostics');
 dayQualityFile = fullfile(diagDir, 'contract_day_quality.csv');
@@ -56,7 +59,7 @@ params.w_gaps = 0.20;
 
 fprintf('Reading ECB calendar:\n%s\n\n', calendarFile);
 
-eventPanel = load_and_build_event_panel(calendarFile);
+eventPanel = load_and_build_event_panel(calendarFile, timeCfg);
 
 fprintf('ECB event dates: %d\n', height(eventPanel));
 
@@ -123,23 +126,31 @@ eventPanelOut = eventPanel;
 eventPanelOut.event_date = string(eventPanelOut.event_date, 'yyyy-MM-dd');
 eventPanelOut.pr_datetime_local = string(eventPanelOut.pr_datetime_local, 'yyyy-MM-dd HH:mm');
 eventPanelOut.pc_datetime_local = string(eventPanelOut.pc_datetime_local, 'yyyy-MM-dd HH:mm');
+eventPanelOut.pr_datetime_utc = string(eventPanelOut.pr_datetime_utc, 'yyyy-MM-dd HH:mm');
+eventPanelOut.pc_datetime_utc = string(eventPanelOut.pc_datetime_utc, 'yyyy-MM-dd HH:mm');
 
 candOut = cand;
 candOut.trade_date = string(candOut.trade_date, 'yyyy-MM-dd');
 candOut.event_date = string(candOut.event_date, 'yyyy-MM-dd');
 candOut.pr_datetime_local = string(candOut.pr_datetime_local, 'yyyy-MM-dd HH:mm');
 candOut.pc_datetime_local = string(candOut.pc_datetime_local, 'yyyy-MM-dd HH:mm');
+candOut.pr_datetime_utc = string(candOut.pr_datetime_utc, 'yyyy-MM-dd HH:mm');
+candOut.pc_datetime_utc = string(candOut.pc_datetime_utc, 'yyyy-MM-dd HH:mm');
 
 prefOut = pref;
 prefOut.trade_date = string(prefOut.trade_date, 'yyyy-MM-dd');
 prefOut.event_date = string(prefOut.event_date, 'yyyy-MM-dd');
 prefOut.pr_datetime_local = string(prefOut.pr_datetime_local, 'yyyy-MM-dd HH:mm');
 prefOut.pc_datetime_local = string(prefOut.pc_datetime_local, 'yyyy-MM-dd HH:mm');
+prefOut.pr_datetime_utc = string(prefOut.pr_datetime_utc, 'yyyy-MM-dd HH:mm');
+prefOut.pc_datetime_utc = string(prefOut.pc_datetime_utc, 'yyyy-MM-dd HH:mm');
 
 coverageOut = coverage;
 coverageOut.event_date = string(coverageOut.event_date, 'yyyy-MM-dd');
 coverageOut.pr_datetime_local = string(coverageOut.pr_datetime_local, 'yyyy-MM-dd HH:mm');
 coverageOut.pc_datetime_local = string(coverageOut.pc_datetime_local, 'yyyy-MM-dd HH:mm');
+coverageOut.pr_datetime_utc = string(coverageOut.pr_datetime_utc, 'yyyy-MM-dd HH:mm');
+coverageOut.pc_datetime_utc = string(coverageOut.pc_datetime_utc, 'yyyy-MM-dd HH:mm');
 
 eventPanelFile = fullfile(diagDir, 'ecb_event_panel.csv');
 candFile = fullfile(diagDir, 'event_contract_day_candidates.csv');
@@ -176,7 +187,7 @@ if ~isempty(pref)
     disp(tmp(1:min(10, height(tmp)), {'event_date', 'root_code', 'file_name_clean', 'expiry_code', 'contract_year', 'prelim_eligible', 'selection_score', 'total_volume', 'share_low_volume', 'pct_expected_gaps'}));
 end
 
-function eventPanel = load_and_build_event_panel(calendarFile)
+function eventPanel = load_and_build_event_panel(calendarFile, timeCfg)
 
     [~, ~, ext] = fileparts(calendarFile);
 
@@ -237,6 +248,16 @@ function eventPanel = load_and_build_event_panel(calendarFile)
     eventPanel.pc_time_local = raw.pc_dur;
     eventPanel.pr_datetime_local = raw.event_date + raw.pr_dur;
     eventPanel.pc_datetime_local = raw.event_date + raw.pc_dur;
+    eventPanel.pr_datetime_utc = Wall_clock_to_utc(eventPanel.pr_datetime_local, timeCfg.event_time_zone);
+    eventPanel.pc_datetime_utc = Wall_clock_to_utc(eventPanel.pc_datetime_local, timeCfg.event_time_zone);
+    eventPanel.pr_utc_offset_minutes = minutes(eventPanel.pr_datetime_local - eventPanel.pr_datetime_utc);
+    eventPanel.pc_utc_offset_minutes = minutes(eventPanel.pc_datetime_local - eventPanel.pc_datetime_utc);
+    if any(~ismember(eventPanel.pr_utc_offset_minutes, [60, 120])) || ...
+            any(~ismember(eventPanel.pc_utc_offset_minutes, [60, 120]))
+        error('Unexpected Europe/Berlin UTC offset in the ECB calendar.');
+    end
+    eventPanel.event_time_zone = repmat(timeCfg.event_time_zone, height(eventPanel), 1);
+    eventPanel.analysis_time_zone = repmat(timeCfg.analysis_time_zone, height(eventPanel), 1);
 end
 
 function out = assign_optional_col(T, varName, n)
@@ -365,6 +386,8 @@ function coverage = summarize_event_coverage(eventPanel, cand, pref)
     coverage.location = eventPanel.location;
     coverage.pr_datetime_local = eventPanel.pr_datetime_local;
     coverage.pc_datetime_local = eventPanel.pc_datetime_local;
+    coverage.pr_datetime_utc = eventPanel.pr_datetime_utc;
+    coverage.pc_datetime_utc = eventPanel.pc_datetime_utc;
     coverage.n_candidates_total = n_candidates_total;
     coverage.n_candidates_fx = n_candidates_fx;
     coverage.n_candidates_gg = n_candidates_gg;

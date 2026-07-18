@@ -16,6 +16,19 @@ if [ ! -d "$data_root/Output/cleaned" ]; then
     exit 2
 fi
 
+manifest="$data_root/Output/manifests/time_alignment_manifest.csv"
+window_file="$data_root/Output/analysis/announcement_counterfactual_windows.csv"
+
+if [ ! -f "$manifest" ] || ! grep -q 'timezone_v1' "$manifest" || ! grep -q 'complete' "$manifest"; then
+    echo "Corrected timezone_v1 manifest not found. Rerun Steps 1--18 from raw data." >&2
+    exit 2
+fi
+
+if [ ! -f "$window_file" ] || ! head -1 "$window_file" | grep -q 'pseudo_pr_datetime_utc'; then
+    echo "Corrected Step-18 input not found: $window_file" >&2
+    exit 2
+fi
+
 case "$mode" in
     smoke)
         draws="${3:-49}"

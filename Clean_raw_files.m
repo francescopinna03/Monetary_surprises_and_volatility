@@ -21,25 +21,40 @@
 %
 % Input file pattern is Raw/Barchart_futures/*.csv.
 % Output cleaned files are written to Output/cleaned/*_clean.csv.
-% Output diagnostics are Output/diagnostics/cleaning_row_flags.csv and Output/diagnostics/cleaning_file_summary.csv.
+% Raw timestamps are localized as America/Chicago and converted to canonical
+% UTC before any cleaned file is written. Output diagnostics are
+% Output/diagnostics/cleaning_row_flags.csv and
+% Output/diagnostics/cleaning_file_summary.csv. The frozen clock provenance is
+% recorded in Output/manifests/time_alignment_manifest.csv.
 % Required helper is clean_single_barchart_file.m, which must be available on the MATLAB path or in the same folder as this script.
 
 clear; clc;
 
 projectRoot = Get_project_root();
 
+timeCfg = Time_alignment_config();
+Time_alignment_self_test();
+
 rawDir = fullfile(projectRoot, 'Raw', 'Barchart_futures');
 cleanDir = fullfile(projectRoot, 'Output', 'cleaned');
 diagDir = fullfile(projectRoot, 'Output', 'diagnostics');
+manifestDir = fullfile(projectRoot, 'Output', 'manifests');
 
 if ~exist(cleanDir, 'dir'); mkdir(cleanDir); end
 if ~exist(diagDir, 'dir'); mkdir(diagDir); end
+if ~exist(manifestDir, 'dir'); mkdir(manifestDir); end
+
+timeManifestFile = fullfile(manifestDir, 'time_alignment_manifest.csv');
+if exist(timeManifestFile, 'file') == 2
+    delete(timeManifestFile);
+end
 
 params = struct();
 params.spike_ratio_threshold = 5;
 params.spike_logjump_threshold = 1.0;
 params.max_spike_gap_minutes = 60;
 params.low_volume_flag_threshold = 1;
+params.raw_time_zone = timeCfg.raw_time_zone;
 
 files = dir(fullfile(rawDir, '*.csv'));
 files = files(~[files.isdir]);
@@ -88,6 +103,19 @@ summaryFile = fullfile(diagDir, 'cleaning_file_summary.csv');
 writetable(cleaningRowFlags, rowLogFile);
 writetable(cleaningFileSummary, summaryFile);
 
+generatedAt = datetime('now', 'TimeZone', 'UTC');
+timeManifest = table(timeCfg.schema_version, timeCfg.raw_provider, ...
+    timeCfg.raw_time_zone, timeCfg.event_time_zone, timeCfg.analysis_time_zone, ...
+    timeCfg.cleaned_time_column, timeCfg.cleaned_time_semantics, ...
+    timeCfg.bar_label_semantics, "complete", nFiles, ...
+    sum(cleaningFileSummary.n_clean_rows, 'omitnan'), ...
+    string(generatedAt, 'yyyy-MM-dd HH:mm:ss'), ...
+    'VariableNames', {'schema_version', 'raw_provider', 'raw_time_zone', ...
+    'event_time_zone', 'analysis_time_zone', 'cleaned_time_column', ...
+    'cleaned_time_semantics', 'bar_label_semantics', 'status', ...
+    'n_files', 'n_clean_rows', 'generated_at_utc'});
+writetable(timeManifest, timeManifestFile);
+
 fprintf('\n================ CLEANING SUMMARY ================\n');
 fprintf('Raw files processed       : %d\n', nFiles);
 fprintf('Cleaned files written     : %d\n', height(cleaningFileSummary));
@@ -95,6 +123,8 @@ fprintf('Rows dropped or flagged   : %d\n', height(cleaningRowFlags));
 fprintf('Cleaned directory         : %s\n', cleanDir);
 fprintf('Row-level log             : %s\n', rowLogFile);
 fprintf('File-level summary        : %s\n', summaryFile);
+fprintf('Time-alignment manifest   : %s\n', timeManifestFile);
+fprintf('Raw -> analysis timezone  : %s -> %s\n', timeCfg.raw_time_zone, timeCfg.analysis_time_zone);
 fprintf('==================================================\n');
 
 function T = empty_rowlog_table()

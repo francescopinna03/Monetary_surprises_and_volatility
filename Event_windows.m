@@ -9,7 +9,9 @@
 % around the press conference, and the ANN window spans the broader announcement
 % interval from before the press release to after the press conference.
 %
-% Within each window, the script computes coverage diagnostics and realized
+% All comparisons use canonical UTC. The local Europe/Berlin event clock is
+% retained in the outputs for auditability. Within each window, the script
+% computes coverage diagnostics and realized
 % measures from 5-minute futures prices, which include the number of
 % observed bars, the expected number of bars, the share of expected bars
 % actually observed, exact event-bar availability, low-volume share and maximum
@@ -28,6 +30,7 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+Require_time_alignment_manifest(projectRoot);
 
 cleanDir = fullfile(projectRoot, 'Output', 'cleaned');
 diagDir = fullfile(projectRoot, 'Output', 'diagnostics');
@@ -52,7 +55,9 @@ params.require_exact_event_bar = true;
 
 pref = readtable(prefFile, 'TextType', 'string');
 
-requiredVars = ["event_date", "event_id", "root_code", "file_name_clean", "pr_datetime_local", "pc_datetime_local", "prelim_eligible", "expiry_code", "contract_year"];
+requiredVars = ["event_date", "event_id", "root_code", "file_name_clean", ...
+    "pr_datetime_local", "pc_datetime_local", "pr_datetime_utc", ...
+    "pc_datetime_utc", "prelim_eligible", "expiry_code", "contract_year"];
 missingVars = requiredVars(~ismember(requiredVars, string(pref.Properties.VariableNames)));
 
 if ~isempty(missingVars)
@@ -62,6 +67,8 @@ end
 pref.event_date = Parse_date_flexible(pref.event_date);
 pref.pr_datetime_local = Parse_datetime_flexible(pref.pr_datetime_local);
 pref.pc_datetime_local = Parse_datetime_flexible(pref.pc_datetime_local);
+pref.pr_datetime_utc = Parse_utc_datetime(pref.pr_datetime_utc);
+pref.pc_datetime_utc = Parse_utc_datetime(pref.pc_datetime_utc);
 pref.root_code = string(pref.root_code);
 pref.file_name_clean = string(pref.file_name_clean);
 pref.event_id = string(pref.event_id);
@@ -201,21 +208,20 @@ function T = read_cleaned_file(fpath, opts)
         error('Missing columns in %s: %s', fpath, strjoin(miss, ', '));
     end
 
-    if ~isdatetime(T.Time)
-        T.Time = datetime(T.Time, 'InputFormat', 'yyyy-MM-dd HH:mm');
-    end
+    T.Time = Parse_utc_datetime(T.Time);
 end
 
 function winDef = build_window_definitions(row, params)
 
-    prTime = row.pr_datetime_local;
-    pcTime = row.pc_datetime_local;
+    prTimeUtc = row.pr_datetime_utc;
+    pcTimeUtc = row.pc_datetime_utc;
 
     winDef = table();
     winDef.window_name = ["PR"; "PC"; "ANN"];
-    winDef.event_time = [prTime; pcTime; prTime];
-    winDef.window_start = [prTime - minutes(params.pr_pre_minutes); pcTime - minutes(params.pc_pre_minutes); prTime - minutes(params.ann_pre_from_pr_minutes)];
-    winDef.window_end = [prTime + minutes(params.pr_post_minutes); pcTime + minutes(params.pc_post_minutes); pcTime + minutes(params.ann_post_from_pc_minutes)];
+    winDef.event_time_local = [row.pr_datetime_local; row.pc_datetime_local; row.pr_datetime_local];
+    winDef.event_time_utc = [prTimeUtc; pcTimeUtc; prTimeUtc];
+    winDef.window_start_utc = [prTimeUtc - minutes(params.pr_pre_minutes); pcTimeUtc - minutes(params.pc_pre_minutes); prTimeUtc - minutes(params.ann_pre_from_pr_minutes)];
+    winDef.window_end_utc = [prTimeUtc + minutes(params.pr_post_minutes); pcTimeUtc + minutes(params.pc_post_minutes); pcTimeUtc + minutes(params.ann_post_from_pc_minutes)];
 end
 
 function [winSummary, winBars] = process_event_windows(T, row, winDef, params)
@@ -227,10 +233,10 @@ function [winSummary, winBars] = process_event_windows(T, row, winDef, params)
 
         w = winDef(k, :);
 
-        X = T(T.Time >= w.window_start & T.Time <= w.window_end, :);
+        X = T(T.Time >= w.window_start_utc & T.Time <= w.window_end_utc, :);
         X = sortrows(X, 'Time');
 
-        expectedTimes = transpose(w.window_start : minutes(params.bar_minutes) : w.window_end);
+        expectedTimes = transpose(w.window_start_utc : minutes(params.bar_minutes) : w.window_end_utc);
         nExpected = numel(expectedTimes);
 
         met = compute_window_metrics(X, w, expectedTimes, params);
@@ -283,7 +289,7 @@ function met = compute_window_metrics(X, w, expectedTimes, params)
 
     obsTimes = X.Time;
 
-    met.exactEventBar = any(obsTimes == w.event_time);
+    met.exactEventBar = any(obsTimes == w.event_time_utc);
     met.pctExpected = mean(ismember(expectedTimes, obsTimes));
     met.shareLV = mean(X.Volume <= params.low_volume_threshold);
     met.firstBar = obsTimes(1);
@@ -327,9 +333,10 @@ function S = build_window_summary(row, w, met, eligible, params)
     S.expiry_code = row.expiry_code;
     S.contract_year = row.contract_year;
     S.window_name = w.window_name;
-    S.event_time = w.event_time;
-    S.window_start = w.window_start;
-    S.window_end = w.window_end;
+    S.event_time_local = w.event_time_local;
+    S.event_time_utc = w.event_time_utc;
+    S.window_start_utc = w.window_start_utc;
+    S.window_end_utc = w.window_end_utc;
     S.n_obs_bars = met.nObs;
     S.n_expected_bars = met.nExpected;
     S.pct_expected_bars = met.pctExpected;
@@ -368,16 +375,17 @@ function B = build_window_bars(row, w, X)
     B.expiry_code = repmat(row.expiry_code, n, 1);
     B.contract_year = repmat(row.contract_year, n, 1);
     B.window_name = repmat(w.window_name, n, 1);
-    B.event_time = repmat(w.event_time, n, 1);
-    B.window_start = repmat(w.window_start, n, 1);
-    B.window_end = repmat(w.window_end, n, 1);
+    B.event_time_local = repmat(w.event_time_local, n, 1);
+    B.event_time_utc = repmat(w.event_time_utc, n, 1);
+    B.window_start_utc = repmat(w.window_start_utc, n, 1);
+    B.window_end_utc = repmat(w.window_end_utc, n, 1);
     B.Time = X.Time;
     B.Open = X.Open;
     B.High = X.High;
     B.Low = X.Low;
     B.Latest = X.Latest;
     B.Volume = X.Volume;
-    B.rel_event_minutes = minutes(X.Time - w.event_time);
+    B.rel_event_minutes = minutes(X.Time - w.event_time_utc);
 end
 
 function panel = build_wide_window_panel(S)
@@ -393,6 +401,8 @@ function panel = build_wide_window_panel(S)
 
     panel.pr_datetime_local = NaT(height(panel), 1);
     panel.pc_datetime_local = NaT(height(panel), 1);
+    panel.pr_datetime_utc = NaT(height(panel), 1);
+    panel.pc_datetime_utc = NaT(height(panel), 1);
 
     winNames = ["PR", "PC", "ANN"];
     numFields = {'n_obs_bars', 'n_expected_bars', 'pct_expected_bars', 'share_low_volume', 'max_gap_minutes', 'rv', 'rsv_pos', 'rsv_neg', 'abs_return_sum', 'net_log_return'};
@@ -420,13 +430,15 @@ function panel = build_wide_window_panel(S)
         prRow = X(X.window_name == "PR", :);
 
         if ~isempty(prRow)
-            panel.pr_datetime_local(i) = prRow.event_time(1);
+            panel.pr_datetime_local(i) = prRow.event_time_local(1);
+            panel.pr_datetime_utc(i) = prRow.event_time_utc(1);
         end
 
         pcRow = X(X.window_name == "PC", :);
 
         if ~isempty(pcRow)
-            panel.pc_datetime_local(i) = pcRow.event_time(1);
+            panel.pc_datetime_local(i) = pcRow.event_time_local(1);
+            panel.pc_datetime_utc(i) = pcRow.event_time_utc(1);
         end
 
         for a = 1:numel(winNames)
@@ -459,9 +471,10 @@ function T = format_bars_for_write(T)
 
     T.event_date = string(T.event_date, 'yyyy-MM-dd');
     T.trade_date = string(T.trade_date, 'yyyy-MM-dd');
-    T.event_time = string(T.event_time, 'yyyy-MM-dd HH:mm');
-    T.window_start = string(T.window_start, 'yyyy-MM-dd HH:mm');
-    T.window_end = string(T.window_end, 'yyyy-MM-dd HH:mm');
+    T.event_time_local = string(T.event_time_local, 'yyyy-MM-dd HH:mm');
+    T.event_time_utc = string(T.event_time_utc, 'yyyy-MM-dd HH:mm');
+    T.window_start_utc = string(T.window_start_utc, 'yyyy-MM-dd HH:mm');
+    T.window_end_utc = string(T.window_end_utc, 'yyyy-MM-dd HH:mm');
     T.Time = string(T.Time, 'yyyy-MM-dd HH:mm');
 end
 
@@ -473,9 +486,10 @@ function T = format_summary_for_write(T)
 
     T.event_date = string(T.event_date, 'yyyy-MM-dd');
     T.trade_date = string(T.trade_date, 'yyyy-MM-dd');
-    T.event_time = string(T.event_time, 'yyyy-MM-dd HH:mm');
-    T.window_start = string(T.window_start, 'yyyy-MM-dd HH:mm');
-    T.window_end = string(T.window_end, 'yyyy-MM-dd HH:mm');
+    T.event_time_local = string(T.event_time_local, 'yyyy-MM-dd HH:mm');
+    T.event_time_utc = string(T.event_time_utc, 'yyyy-MM-dd HH:mm');
+    T.window_start_utc = string(T.window_start_utc, 'yyyy-MM-dd HH:mm');
+    T.window_end_utc = string(T.window_end_utc, 'yyyy-MM-dd HH:mm');
     T.first_bar_time = string(T.first_bar_time, 'yyyy-MM-dd HH:mm');
     T.last_bar_time = string(T.last_bar_time, 'yyyy-MM-dd HH:mm');
 end
@@ -490,6 +504,8 @@ function T = format_panel_for_write(T)
     T.trade_date = string(T.trade_date, 'yyyy-MM-dd');
     T.pr_datetime_local = string(T.pr_datetime_local, 'yyyy-MM-dd HH:mm');
     T.pc_datetime_local = string(T.pc_datetime_local, 'yyyy-MM-dd HH:mm');
+    T.pr_datetime_utc = string(T.pr_datetime_utc, 'yyyy-MM-dd HH:mm');
+    T.pc_datetime_utc = string(T.pc_datetime_utc, 'yyyy-MM-dd HH:mm');
 end
 
 function T = empty_window_summary_table()
@@ -503,9 +519,10 @@ function T = empty_window_summary_table()
     T.expiry_code = strings(0, 1);
     T.contract_year = nan(0, 1);
     T.window_name = strings(0, 1);
-    T.event_time = NaT(0, 1);
-    T.window_start = NaT(0, 1);
-    T.window_end = NaT(0, 1);
+    T.event_time_local = NaT(0, 1);
+    T.event_time_utc = NaT(0, 1);
+    T.window_start_utc = NaT(0, 1);
+    T.window_end_utc = NaT(0, 1);
     T.n_obs_bars = nan(0, 1);
     T.n_expected_bars = nan(0, 1);
     T.pct_expected_bars = nan(0, 1);
@@ -537,9 +554,10 @@ function T = empty_window_bars_table()
     T.expiry_code = strings(0, 1);
     T.contract_year = nan(0, 1);
     T.window_name = strings(0, 1);
-    T.event_time = NaT(0, 1);
-    T.window_start = NaT(0, 1);
-    T.window_end = NaT(0, 1);
+    T.event_time_local = NaT(0, 1);
+    T.event_time_utc = NaT(0, 1);
+    T.window_start_utc = NaT(0, 1);
+    T.window_end_utc = NaT(0, 1);
     T.Time = NaT(0, 1);
     T.Open = nan(0, 1);
     T.High = nan(0, 1);
@@ -561,6 +579,8 @@ function T = empty_window_panel_table()
     T.contract_year = nan(0, 1);
     T.pr_datetime_local = NaT(0, 1);
     T.pc_datetime_local = NaT(0, 1);
+    T.pr_datetime_utc = NaT(0, 1);
+    T.pc_datetime_utc = NaT(0, 1);
 
     winNames = ["PR", "PC", "ANN"];
     numFields = {'n_obs_bars', 'n_expected_bars', 'pct_expected_bars', 'share_low_volume', 'max_gap_minutes', 'rv', 'rsv_pos', 'rsv_neg', 'abs_return_sum', 'net_log_return'};

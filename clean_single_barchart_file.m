@@ -15,7 +15,9 @@
 % rules. 
 % 
 % The outputs are the cleaned table, a row-level cleaning log and a file-level cleaning summary.
-% The cleaned CSV contains Time, Open, High, Low, Latest and Volume.
+% The cleaned CSV contains Time, Open, High, Low, Latest and Volume. Raw Time
+% is interpreted as America/Chicago wall clock and serialized as UTC clock
+% time according to Time_alignment_config.m.
 
 function [cleanTbl, rowLog, fileSummary] = clean_single_barchart_file(fpath, outPath, params)
 
@@ -74,7 +76,7 @@ function [cleanTbl, rowLog, fileSummary] = clean_single_barchart_file(fpath, out
         return;
     end
 
-    T.Time = Parse_datetime_flexible(T.timeStr);
+    T.Time = Wall_clock_to_utc(T.timeStr, params.raw_time_zone);
 
     bad_dt = isnat(T.Time);
     missing_core = any(isnan([T.Open T.High T.Low T.Latest T.Volume]), 2);
@@ -196,6 +198,11 @@ function params = set_default_params(params)
 
     if ~isfield(params, 'low_volume_flag_threshold')
         params.low_volume_flag_threshold = 1;
+    end
+
+    if ~isfield(params, 'raw_time_zone')
+        timeCfg = Time_alignment_config();
+        params.raw_time_zone = timeCfg.raw_time_zone;
     end
 end
 

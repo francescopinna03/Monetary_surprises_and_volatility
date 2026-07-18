@@ -32,6 +32,7 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+Require_time_alignment_manifest(projectRoot);
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 statePanelFile = fullfile(analysisDir, 'pr_state_dependent_panel.csv');
@@ -63,7 +64,7 @@ B = readtable(barFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
 B.event_date = Parse_date_flexible(B.event_date);
 B.root_code = string(B.root_code);
-B.bar_time = Parse_datetime_flexible(B.bar_time);
+B.bar_time = Parse_utc_datetime(B.bar_time);
 
 if ~isnumeric(B.r_bar)
     B.r_bar = str2double(B.r_bar);

@@ -1,5 +1,11 @@
 # Step 21 protocol: bias-adjusted announcement risk resolution
 
+> **Outcome status (2026-07-18).** The original Step-21 output is invalidated
+> by the upstream Barchart/ECB timezone error. This file remains the frozen
+> econometric specification to be rerun after Steps 1--20 under
+> `timezone_v1`; it does not preserve the old `FAIL_RISK_RESOLUTION` decision.
+> See `TIMEZONE_CORRECTION_PROTOCOL.md`.
+
 ## Status and scope
 
 This protocol is locked after observing the Step-20 spectrum but before

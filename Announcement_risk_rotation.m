@@ -50,6 +50,7 @@ elseif exist(fullfile(projectRoot, 'Output'), 'dir') ~= 7
         'Pass the project directory that contains Output/analysis and Output/cleaned.'], ...
         projectRoot);
 end
+Require_time_alignment_manifest(projectRoot);
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 cleanDir = fullfile(projectRoot, 'Output', 'cleaned');
@@ -142,7 +143,7 @@ fprintf('============================================================\n');
 function W = load_window_panel(filePath)
 
     W = readtable(filePath, 'TextType', 'string', 'VariableNamingRule', 'preserve');
-    required = ["trade_date", "root_code", "file_name_clean", "pseudo_pr_datetime", ...
+    required = ["trade_date", "root_code", "file_name_clean", "pseudo_pr_datetime_utc", ...
         "is_event", "window_eligible", "clock_late", "weekday_number", "year_number"];
     missing = required(~ismember(required, string(W.Properties.VariableNames)));
 
@@ -151,7 +152,7 @@ function W = load_window_panel(filePath)
     end
 
     W.trade_date = Parse_date_flexible(W.trade_date);
-    W.pseudo_pr_datetime = Parse_datetime_flexible(W.pseudo_pr_datetime);
+    W.pseudo_pr_datetime_utc = Parse_utc_datetime(W.pseudo_pr_datetime_utc);
     W.root_code = lower(string(W.root_code));
     W.file_name_clean = string(W.file_name_clean);
 
@@ -166,7 +167,7 @@ function W = load_window_panel(filePath)
         end
     end
 
-    W = W(~isnat(W.trade_date) & ~isnat(W.pseudo_pr_datetime), :);
+    W = W(~isnat(W.trade_date) & ~isnat(W.pseudo_pr_datetime_utc), :);
     W = W(ismember(W.root_code, ["fx", "gg"]) & W.window_eligible == 1, :);
     W = sortrows(W, {'trade_date', 'root_code'});
 end
@@ -188,7 +189,7 @@ function [P, store] = build_paired_return_panel(W, cleanDir, cfg)
             continue;
         end
 
-        if fx.pseudo_pr_datetime(1) ~= gg.pseudo_pr_datetime(1)
+        if fx.pseudo_pr_datetime_utc(1) ~= gg.pseudo_pr_datetime_utc(1)
             continue;
         end
 
@@ -199,7 +200,7 @@ function [P, store] = build_paired_return_panel(W, cleanDir, cfg)
             continue;
         end
 
-        pseudoTime = fx.pseudo_pr_datetime(1);
+        pseudoTime = fx.pseudo_pr_datetime_utc(1);
         preGrid = pseudoTime + minutes(cfg.preEndpoints);
         postGrid = pseudoTime + minutes(cfg.postEndpoints);
         rFxPre = returns_on_grid(Cfx, preGrid, cfg.barMinutes);
@@ -216,7 +217,7 @@ function [P, store] = build_paired_return_panel(W, cleanDir, cfg)
 
         R = table();
         R.trade_date = dates(d);
-        R.pseudo_pr_datetime = pseudoTime;
+        R.pseudo_pr_datetime_utc = pseudoTime;
         R.is_event = logical(fx.is_event(1));
         R.clock_late = fx.clock_late(1);
         R.weekday_number = fx.weekday_number(1);
@@ -280,7 +281,7 @@ function [C, cache] = cached_clean_file(filePath, cache)
         return;
     end
 
-    T.Time = Parse_datetime_flexible(T.Time);
+    T.Time = Parse_utc_datetime(T.Time);
     if ~isnumeric(T.Latest); T.Latest = str2double(T.Latest); end
 
     C = table(T.Time, T.Latest, 'VariableNames', {'bar_time', 'price'});

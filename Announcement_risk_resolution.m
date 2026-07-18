@@ -22,6 +22,7 @@ if isempty(projectRoot)
 elseif exist(fullfile(projectRoot, 'Output'), 'dir') ~= 7
     error('ECONOMETRICS_DATA_ROOT does not contain Output/: %s', projectRoot);
 end
+Require_time_alignment_manifest(projectRoot);
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 inputFile = fullfile(analysisDir, 'announcement_rotation_date_matrices.csv');
@@ -180,6 +181,10 @@ function P = load_date_panel(filePath)
     missing = required(~ismember(required, string(P.Properties.VariableNames)));
     if ~isempty(missing)
         error('Step-20 date matrix is missing: %s', strjoin(missing, ', '));
+    end
+
+    if ~ismember("pseudo_pr_datetime_utc", string(P.Properties.VariableNames))
+        error('Step-20 date matrix predates the UTC correction: rerun Announcement_risk_rotation.');
     end
 
     P.trade_date = Parse_date_flexible(P.trade_date);

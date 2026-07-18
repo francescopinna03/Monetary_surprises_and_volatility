@@ -27,6 +27,7 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+Require_time_alignment_manifest(projectRoot);
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 cleanDir = fullfile(projectRoot, 'Output', 'cleaned');
@@ -38,6 +39,7 @@ P = readtable(panelFile, 'TextType', 'string', 'VariableNamingRule', 'preserve')
 
 P.event_date = Parse_date_flexible(P.event_date);
 P.pr_datetime_local = Parse_datetime_flexible(P.pr_datetime_local);
+P.pr_datetime_utc = Parse_utc_datetime(P.pr_datetime_utc);
 P.root_code = string(P.root_code);
 P.file_name_clean = string(P.file_name_clean);
 
@@ -59,7 +61,7 @@ for i = 1:height(P)
     eventDate = P.event_date(i);
     rootCode = string(P.root_code(i));
     cleanName = string(P.file_name_clean(i));
-    prDT = P.pr_datetime_local(i);
+    prDT = P.pr_datetime_utc(i);
     nTarget = P.PR_n_obs_bars(i);
 
     eventId = "";
@@ -103,7 +105,8 @@ for i = 1:height(P)
     Bt.root_code = repmat(rootCode, nB, 1);
     Bt.file_name_clean = repmat(cleanName, nB, 1);
     Bt.source_file = repmat(filePath, nB, 1);
-    Bt.pr_datetime_local = repmat(prDT, nB, 1);
+    Bt.pr_datetime_local = repmat(P.pr_datetime_local(i), nB, 1);
+    Bt.pr_datetime_utc = repmat(prDT, nB, 1);
     Bt.bar_index_in_pr = (1:nB)';
     Bt.bar_time = B.bar_time;
     Bt.price_bar = B.price_bar;
@@ -124,7 +127,8 @@ for i = 1:height(P)
     St.root_code = rootCode;
     St.file_name_clean = cleanName;
     St.source_file = filePath;
-    St.pr_datetime_local = prDT;
+    St.pr_datetime_local = P.pr_datetime_local(i);
+    St.pr_datetime_utc = prDT;
     St.status = S.status;
     St.n_bars_target = nTarget;
     St.n_bars_extracted = nB;
@@ -196,7 +200,7 @@ function C = read_clean_file(filePath)
 
     T = readtable(filePath, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
-    T.Time = Parse_datetime_flexible(T.Time);
+    T.Time = Parse_utc_datetime(T.Time);
 
     if ~isnumeric(T.Latest)
         T.Latest = str2double(T.Latest);
@@ -321,7 +325,7 @@ end
 
 function T = rows_to_bar_table(rows)
 
-    names = {'event_date', 'event_id', 'root_code', 'file_name_clean', 'source_file', 'pr_datetime_local', 'bar_index_in_pr', 'bar_time', 'price_bar', 'prev_price_bar', 'r_bar', 'n_bars_target', 'n_bars_extracted', 'bns_eligible', 'PR_rv_panel', 'PR_net_log_return_panel', 'asinh_PR_rv_panel', 'asinh_PR_rsv_neg_panel'};
+    names = {'event_date', 'event_id', 'root_code', 'file_name_clean', 'source_file', 'pr_datetime_local', 'pr_datetime_utc', 'bar_index_in_pr', 'bar_time', 'price_bar', 'prev_price_bar', 'r_bar', 'n_bars_target', 'n_bars_extracted', 'bns_eligible', 'PR_rv_panel', 'PR_net_log_return_panel', 'asinh_PR_rv_panel', 'asinh_PR_rsv_neg_panel'};
 
     if isempty(rows)
         T = cell2table(cell(0, numel(names)), 'VariableNames', names);
@@ -332,7 +336,7 @@ end
 
 function T = rows_to_summary_table(rows)
 
-    names = {'event_date', 'event_id', 'root_code', 'file_name_clean', 'source_file', 'pr_datetime_local', 'status', 'n_bars_target', 'n_bars_extracted', 'rv_from_bars', 'net_return_from_bars', 'PR_rv_panel', 'PR_net_log_return_panel', 'absdiff_rv', 'absdiff_net_return', 'first_bar_time', 'last_bar_time', 'bns_eligible'};
+    names = {'event_date', 'event_id', 'root_code', 'file_name_clean', 'source_file', 'pr_datetime_local', 'pr_datetime_utc', 'status', 'n_bars_target', 'n_bars_extracted', 'rv_from_bars', 'net_return_from_bars', 'PR_rv_panel', 'PR_net_log_return_panel', 'absdiff_rv', 'absdiff_net_return', 'first_bar_time', 'last_bar_time', 'bns_eligible'};
 
     if isempty(rows)
         T = cell2table(cell(0, numel(names)), 'VariableNames', names);

@@ -30,6 +30,7 @@
 clear; clc;
 
 projectRoot = Get_project_root();
+Require_time_alignment_manifest(projectRoot);
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 windowDir = fullfile(projectRoot, 'Output', 'event_windows');
@@ -83,7 +84,7 @@ B.event_id = string(B.event_id);
 B.file_name_clean = string(B.file_name_clean);
 B.expiry_code = string(B.expiry_code);
 B.window_name = string(B.window_name);
-B.Time = Parse_datetime_flexible(B.Time);
+B.Time = Parse_utc_datetime(B.Time);
 
 numVarsB = ["contract_year", "Latest", "rel_event_minutes"];
 
