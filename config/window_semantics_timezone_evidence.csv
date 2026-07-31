@@ -1,0 +1,2 @@
+evidence_id,provider,instrument_scope,time_zone,source_url,claim_summary,accessed_on
+barchart_futures_ct,Barchart,futures,America/Chicago,https://www.barchart.com/futures/quotes/FXU23/historical-download,Barchart identifies futures and forex times as Central Time (CT) on its futures pages,2026-07-19

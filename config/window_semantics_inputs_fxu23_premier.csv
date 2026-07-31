@@ -1,0 +1,5 @@
+role,relative_path,declared_time_zone,bar_minutes,description
+archive_5m,Raw/Barchart_futures/fxu23_intraday-5min_historical-data-03-24-2026.csv,America/Chicago,5,Archived FXU23 project export downloaded 2026-03-24
+premier_reexport_5m,Raw/Certification/fxu23_2023-09-08_2023-09-15_premier_5m.csv,America/Chicago,5,Fresh FXU23 Barchart Premier export under the provider's published CT convention
+one_minute,Raw/Certification/fxu23_2023-09-13_2023-09-14_premier_1m.csv,America/Chicago,1,FXU23 one-minute Premier bars covering 13-14 September 2023
+five_minute,Raw/Certification/fxu23_2023-09-08_2023-09-15_premier_5m.csv,America/Chicago,5,FXU23 five-minute Premier bars covering the one-minute sample

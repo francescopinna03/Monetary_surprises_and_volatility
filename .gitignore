@@ -5,3 +5,8 @@ risk_resolution_smoke_run.log
 risk_resolution_final_run.log
 full_replication_run.log
 time_alignment_smoke_run.log
+phase_extension_*_run.log
+shock_components_run.log
+component_sufficiency_run.log
+phase_component_contrasts_run.log
+invariant_phase_attribution_run.log
