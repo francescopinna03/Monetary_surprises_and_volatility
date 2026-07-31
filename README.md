@@ -1,12 +1,19 @@
 # Monetary Surprises and Volatility
 
-> **Timestamp-correction status (2026-07-18).** The raw Barchart timestamps are
-> America/Chicago wall clocks, while the ECB calendar contains Europe/Berlin
-> wall clocks. Earlier versions compared them without conversion and therefore
-> measured windows generally six or seven hours after the announcement. All
-> window-dependent results from Steps 5--21, including the Step-21 decision,
-> are superseded pending a clean rerun. The frozen correction is documented in
-> `TIMEZONE_CORRECTION_PROTOCOL.md`.
+> **Current certified status — 31 July 2026.** The public replication now
+> consists of a single 27-step MATLAB pipeline. Steps 1–27 have been reviewed
+> and executed under the certified `timezone_v1` and `window_semantics_v1`
+> conventions: Barchart timestamps are localized as America/Chicago wall
+> clocks, ECB event clocks as Europe/Berlin wall clocks, and all market
+> comparisons are performed in UTC. Every result described below refers to
+> corrected, certified event windows; the earlier naive-clock estimates are
+> not part of the current evidence.
+>
+> The current public scope ends at Step 27. MP–CBI attribution is treated as
+> set-identified rather than point-identified. The final feasibility gate
+> admits the common-direction rank-one restriction but blocks dynamic-operator
+> estimation because the 111-meeting bivariate panel lacks adequate power.
+> Step 27 does not estimate an observed jump.
 
 This repository contains the MATLAB code used to construct the empirical dataset and to estimate the econometric specifications in the project *State-Dependent Transmission of ECB Monetary Surprises to Intraday Volatility*. The computational workflow is designed as a transparent event-study pipeline. Starting from raw intraday futures files and ECB monetary policy dates, the code builds cleaned five-minute futures panels, selects the most reliable contracts around each announcement, extracts press-release windows, merges monetary surprise measures, constructs event-level state variables and estimates a sequence of state-dependent volatility models.
 
@@ -41,6 +48,110 @@ legacy intermediate files without the matching manifest. After Step 4,
 perturbations and the candle selected by the legacy naive-clock code for every
 preferred event contract.
 
+### Certified phase extension
+
+The timezone correction does not by itself determine whether the provider
+timestamp labels the beginning or the end of its five-minute OHLCV interval.
+`Window_semantics_certification.m` resolves this using Barchart's published
+Central Time convention for futures, exact archive-versus-fresh Premier
+reproduction, and an independent 1-minute-to-5-minute reconstruction. It does
+not create a synthetic UTC export when the Premier form offers no time-zone
+selector. Until the resulting `window_semantics_v1` manifest is certified, all
+new phase-specific scripts stop before producing estimates.
+
+After certification, the extension constructs non-overlapping outcomes for
+the rate-decision press release (`PR`, +5:+25 return endpoints) and the press
+conference/Q&A (`PC`, +5:+45). The broader monetary-event window (`ME`) is
+retained only as an aggregate benchmark. Surprise identification follows the
+Jarociński--Karadi decomposition into monetary-policy (`MP`) and central-bank-
+information (`CBI`) shocks separately in PR and PC. Curve PC2--PC4 and simple
+target/path proxies are diagnostic tests of whether this broad pair is
+sufficient, not extra structural shocks.
+
+Copy `config/window_semantics_inputs_template.csv` to
+`Raw/Certification/window_semantics_inputs.csv`, fill the four input roles
+(the fresh Premier five-minute file can fill two roles).
+
+For the certified FXU23 Premier sample used by this project, no manual path
+editing is needed:
+
+```bash
+cp config/window_semantics_inputs_fxu23_premier.csv \
+  /path/to/Econometrics_data/Raw/Certification/window_semantics_inputs.csv
+```
+
+The master `Run_pipeline.m` performs certification and construction
+automatically as part of the complete 27-step run. For an isolated rerun of
+the phase extension, use:
+
+```bash
+./Run_phase_extension.sh /path/to/Econometrics_data certify
+./Run_phase_extension.sh /path/to/Econometrics_data build
+```
+
+The build produces phase windows, shock-component audits and distinct PR, PC
+and ME non-event counterfactuals. Detailed frozen rules are in
+`WINDOW_SEMANTICS_PROTOCOL.md`, `PHASE_WINDOW_PROTOCOL.md`,
+`STEP22_SHOCK_COMPONENTS.md` and `PHASE_COUNTERFACTUAL_PROTOCOL.md`. The legacy
+Steps 5--21 remain unchanged for audit and their historical outputs are never
+overwritten by this extension.
+
+Step 23 then tests whether curve PC2 adds stable information beyond the broad
+MP--CBI pair. Promotion requires Holm-adjusted in-sample evidence, paired
+leave-one-event-out bootstrap improvement, the implied rotation-invariance
+audit and leave-top-k stability for both abnormal log BV and log RV. PC2--PC4
+energy and target/path models are diagnostic; ME cannot determine the
+decision. Run
+`./Run_component_sufficiency.sh /path/to/Econometrics_data`; the full protocol
+is in `STEP23_COMPONENT_SUFFICIENCY.md`.
+
+Step 24 estimates PR and PC in one paired stacked system. Its primary
+rotation-invariant Wald test compares the complete quadratic response surfaces
+in the policy-indicator/equity basis. Median-rotation MP and CBI contrasts are
+secondary and require wild-cluster, full rotation-grid and leave-top-k support
+before receiving a component interpretation. ME remains descriptive. Run
+`./Run_phase_component_contrasts.sh /path/to/Econometrics_data`; the protocol
+is in `STEP24_PHASE_COMPONENT_CONTRASTS.md`.
+
+Step 25 attributes an established PR-PC phase gap without selecting a JK
+rotation. It eigendecomposes the pooled-covariance-standardised difference of
+the policy/equity quadratic response matrices, bootstraps its dominant
+direction by event, and classifies only its MP-like or CBI-like sign sector.
+Median-JK, poor-man and residual short-curve blocks remain falsification
+exercises. Run
+`./Run_invariant_phase_attribution.sh /path/to/Econometrics_data`; the protocol
+is in `STEP25_INVARIANT_PHASE_ATTRIBUTION.md`.
+
+Step 26 reconstructs the official ABGMR `Target` factor in PR and `Timing`,
+`Forward Guidance` and `QE` factors in PC from the 1M--10Y curve. It tests only
+their information incremental to the Step-25 policy/equity plane and asks
+whether that block materially attenuates the paired PR-PC response gap. A
+named attribution must pass wild-cluster, grouped-OOS, leave-top-k and
+generated-factor LOO checks. These curve factors do not by themselves convert
+the MP-like set attribution into an exact structural MP/CBI label. Run
+`./Run_long_horizon_attribution.sh /path/to/Econometrics_data`; the protocol is
+in `STEP26_LONG_HORIZON_ATTRIBUTION.md`.
+
+Step 27 is a sequential feasibility gate for the proposed dynamic operator.
+Module A calibrates the finite-sample spectrum under a jointly estimated
+common-direction rank-one null. `MP-like` remains the opposite-sign sector of
+the observed policy/equity plane; no point vector from the official ABGMR
+factor restrictions is substituted for it. Only after a final 999-draw pass
+does Module B calibrate the power frontier for intensity, reactivation and
+cross-market risk-rotation jumps using polarized bipower covariation. The
+master pipeline enforces this A-to-B gate automatically; if A fails, B is
+recorded as blocked rather than run. The protocols are in
+`STEP27_RANK_ONE_FEASIBILITY.md` and
+`STEP27B_DYNAMIC_JUMP_FRONTIER.md`.
+
+In the certified sample, Module A does not reject the rank-one representation,
+including after removing the top 1, 3 and 5 events. This means rank one is
+admissible, not established. Module B then finds all three 80%-power frontiers
+above the frozen grid. Worst-sign power at \(\rho=0.50\) is 4.5% for intensity,
+5.3% for reactivation and 8.8% for risk rotation; even at \(\rho=1\), it is
+4.9%, 13.5% and 22.4%. Dynamic operator estimation is therefore blocked for
+lack of power. Step 27 never estimates an observed jump.
+
 ## Notes on reproducibility
 
 The code is written in MATLAB and uses standard table, datetime and matrix operations. 
@@ -54,7 +165,11 @@ Common utilities are shared function files in the repository root, including
 when MATLAB runs from the repository folder or when the folder is on the
 MATLAB path.
 
-The stochastic steps are seeded for exact reproducibility. `Hierarchical_shrinkage.m`, `Quasi_markov_residual_predictability.m` and Steps 18--21 each declare their seeds in the corresponding script. Changing a seed changes bootstrap or placebo results within simulation noise; keeping the defaults reproduces the reported draws.
+The stochastic steps are seeded for exact reproducibility.
+`Hierarchical_shrinkage.m`, `Quasi_markov_residual_predictability.m` and
+Steps 18--27 declare their seeds in the corresponding scripts. Changing a seed
+changes bootstrap or placebo results within simulation noise; keeping the
+defaults reproduces the reported draws.
 
 The pipeline deliberately includes a large number of diagnostic checks, intermediate summaries and debugging tables. The authors agree that a similar design choice reflects the size and fragility of the underlying intraday dataset. Since the empirical analysis depends on high-frequency futures prices, event-time matching, contract selection and short-window realized measures, each step produces auxiliary outputs that make the data-management process inspectable.
 
@@ -64,7 +179,11 @@ The raw input files are provided separately together with the paper draft, as a 
 
 ## Repository structure
 
-The repository is organized as a flat MATLAB codebase. The files are intended to be run sequentially, with some later files serving as robustness checks or extensions rather than mandatory baseline steps. The master script `Run_pipeline.m` executes all twenty-one steps in order and writes a full console log to `pipeline_run.log`.
+The repository is organized as a flat MATLAB codebase. The files are intended
+to be run sequentially, with later files serving as robustness checks and
+identification extensions. The master script `Run_pipeline.m` executes all
+twenty-seven steps in order and writes a full console log to
+`pipeline_run.log`.
 
 A full replication therefore reduces to one command. From MATLAB:
 
@@ -81,6 +200,22 @@ From the terminal, without opening the MATLAB desktop:
 ```
 
 The shell wrapper requires and validates the data-root argument, uses `matlab` from the PATH or the newest installation found in `/Applications`, exports `ECONOMETRICS_DATA_ROOT`, and runs the pipeline headless with `matlab -batch`. Direct MATLAB execution may instead use `setenv` or place `Econometrics_data` next to the scripts.
+
+Step 27 can also be rerun on final Step-25 and Step-26 outputs without
+repeating the earlier stages:
+
+```bash
+./Run_step27.sh /path/to/Econometrics_data
+```
+
+This runner locks both modules to 999 draws, runs Module A first, and launches
+Module B only after a valid final pass. The individual smoke-test runners
+remain available for implementation checks:
+
+```bash
+./Run_rank_one_feasibility.sh /path/to/Econometrics_data 19
+./Run_dynamic_jump_frontier.sh /path/to/Econometrics_data 19
+```
 
 Before launching the stochastic Steps 6--21 after the timestamp correction,
 run the data-engineering smoke test:
@@ -120,6 +255,13 @@ pipeline.
 | 19 | `Announcement_counterfactual_validation.m` | Stress-tests the counterfactual with a one-stage stacked model, a stratified two-stage date bootstrap, matched non-event controls and placebos, shock-support diagnostics, leave-top-k sensitivity, and separate FX/GG estimates. |
 | 20 | `Announcement_risk_rotation.m` | Reconstructs paired Euro Stoxx/Euro Bund returns, estimates the abnormal post-minus-pre second-moment matrix against paired non-event controls, and tests whether ECB announcements create a positive news direction while resolving risk in a distinct negative direction. |
 | 21 | `Announcement_risk_resolution.m` | Re-estimates the Step-20 abnormal matrix after common-support trimming and leave-year-out correction of normal continuation; the binding result is the negative eigenvalue in the full and non-2020 samples. |
+| 22 | `Run_phase_extension.m` | Certifies window semantics, constructs non-overlapping PR/PC/ME phase windows, builds shock components and estimates the phase-specific non-event counterfactuals. |
+| 23 | `Component_sufficiency_analysis.m` | Tests whether short-curve PC2 adds stable information beyond the policy/equity shock plane. |
+| 24 | `Phase_component_contrasts.m` | Estimates paired PR-PC response surfaces and tests phase heterogeneity with rotation-invariant and component-level contrasts. |
+| 25 | `Invariant_phase_attribution.m` | Attributes the PR-PC BV gap to a set-identified MP-like or CBI-like direction without selecting a JK rotation. |
+| 26 | `Long_horizon_phase_attribution.m` | Reconstructs official long-horizon factors and tests whether they add robust information beyond the Step-25 plane. |
+| 27A | `Rank_one_feasibility.m` | Calibrates the common-direction rank-one null in the full sample and under leave-top-k exclusions. |
+| 27B | `Dynamic_jump_frontier.m` | Conditional on 27A, calibrates worst-sign power frontiers for dynamic intensity, reactivation and risk-rotation jumps without estimating an observed jump. |
 
 ### Decisive non-event counterfactual
 
@@ -171,7 +313,14 @@ event bootstrap, matched-placebo distribution and leave-one-event-out spectrum.
 
 The protocol and binding decision rule are recorded in `STEP21_PROTOCOL.md`. The negative eigenvalue must have a bootstrap upper endpoint below zero both in the full sample and after excluding 2020; retention and usable-bootstrap gates must also pass. The positive eigenvalue and the relative Bund-equity rotation are secondary and cannot rescue a failed decision.
 
-Step 21 writes separate directories so a smoke test cannot overwrite the final results. `./Run_risk_resolution.sh /path/to/Econometrics_data smoke 49` writes to `Output/analysis/step21_smoke`. `./Run_risk_resolution.sh /path/to/Econometrics_data final 999` writes to `Output/analysis/step21_final`. `Run_decisive_test.sh` reruns Steps 20 and 21 only. A complete `Run_pipeline.sh /path/to/Econometrics_data` replication executes all 21 steps and defaults to the final 999-draw specification.
+Step 21 writes separate directories so a smoke test cannot overwrite the final
+results. `./Run_risk_resolution.sh /path/to/Econometrics_data smoke 49` writes
+to `Output/analysis/step21_smoke`.
+`./Run_risk_resolution.sh /path/to/Econometrics_data final 999` writes to
+`Output/analysis/step21_final`. `Run_decisive_test.sh` reruns Steps 20 and 21
+only. A complete `Run_pipeline.sh /path/to/Econometrics_data` replication
+executes all 27 steps and locks every stochastic decision stage through
+Step 27 to the final 999-draw specification.
 
 The distinction between `Clean_raw_files.m` and `clean_single_barchart_file.m` is important. The former is the script that should be executed by the user. The latter is a single-file cleaning function. In a full run, the driver calls the helper once for each raw Barchart CSV file. The shared helper `Get_project_root.m` must also be available on the MATLAB path or in the same folder as the scripts, which is automatic when the repository is used as the working directory.
 

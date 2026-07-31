@@ -9,6 +9,26 @@
 > `TIMEZONE_CORRECTION_PROTOCOL.md`. The document is retained as an audit trail,
 > not as the current assessment of the hypothesis.
 
+## Current reopening protocol
+
+The project now treats the discovery as an identification reset. Before any
+coefficient is interpreted, a fresh-export audit must certify both the
+Barchart time zone and the provider's candle-label convention. New outcomes
+then separate the scheduled rate-decision release from the conference/Q&A;
+they do not use the observed volume peak to choose either clock.
+
+The minimum structural decomposition is two-dimensional within each phase:
+monetary-policy (`MP`) news and central-bank-information (`CBI`) news. PR and PC
+are distinct measurement phases, not synonyms for target and path. The ME
+window is an aggregate benchmark. Target/path and additional curve dimensions
+remain diagnostics and become structural refinements only if the broad MP/CBI
+pair demonstrably omits stable, outcome-relevant variation.
+
+No coefficient, volatility decomposition or eigenvalue computed on the old
+clock is revived by this design. The first admissible new evidence is produced
+only after `window_semantics_v1` passes and is written to separate
+`phase_windows` and `phase_counterfactuals` output directories.
+
 ## Historical bottom line (superseded)
 
 Before discovery of the clock error, the working conclusion was that the
