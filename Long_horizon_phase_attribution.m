@@ -18,11 +18,7 @@ function Long_horizon_phase_attribution()
     if exist(outputDir, 'dir') ~= 7; mkdir(outputDir); end
 
     files = struct();
-    files.eampd = Locate_first_existing({ ...
-        fullfile(projectRoot, 'Raw', 'EA_MPD', 'Dataset_EA-MPD.xlsx'); ...
-        fullfile(projectRoot, 'Raw', 'EA_MPD', 'Dataset_EA_MPD.xlsx'); ...
-        fullfile(projectRoot, 'Raw', 'EA_MPD', 'EA-MPD.xlsx'); ...
-        fullfile(projectRoot, 'Raw', 'EA_MPD', 'EA_MPD.xlsx')});
+    files.eampd = Locate_ea_policy_dataset(projectRoot);
     files.components = fullfile(analysisDir, 'shock_components_by_event.csv');
     files.pr = fullfile(phaseDir, 'phase_counterfactual_pr_event_rows.csv');
     files.pc = fullfile(phaseDir, 'phase_counterfactual_pc_event_rows.csv');
@@ -203,23 +199,15 @@ end
 
 function [rows, loadings, audit, loo, stability, certified] = ...
         construct_factors(filePath, C, cfg)
-    sheets = ["Press Release Window", "Press Conference Window"];
     phases = ["PR", "PC"];
     rowCells = cell(2, 1);
     loadingCells = cell(2, 1);
     auditCells = {};
     looCells = cell(2, 1);
 
-    available = string(sheetnames(filePath));
-    for sheet = sheets
-        if ~any(strcmpi(strtrim(available), sheet))
-            error('STEP26_SHEET_MISSING: required sheet "%s" not found.', sheet);
-        end
-    end
-
     for h = 1:2
         phase = phases(h);
-        source = read_long_window(filePath, sheets(h));
+        source = read_long_window(filePath, phase);
         [distinctDates, ~, groups] = unique(source.event_date);
         counts = accumarray(groups, 1);
         if any(counts > 1)
@@ -308,9 +296,8 @@ function [rows, loadings, audit, loo, stability, certified] = ...
         all(audit.value(audit.metric == "n_project_rows") > 0);
 end
 
-function source = read_long_window(filePath, sheet)
-    T = readtable(filePath, 'Sheet', sheet, 'TextType', 'string', ...
-        'VariableNamingRule', 'preserve');
+function source = read_long_window(filePath, phase)
+    T = Read_ea_policy_window(filePath, phase);
     names = string(T.Properties.VariableNames);
     normal = normalise_names(names);
     dateName = find_name(names, normal, ["date", "event_date", "meeting_date"], true);
