@@ -39,15 +39,7 @@ panelFile = fullfile(windowDir, 'event_window_panel.csv');
 
 if ~exist(analysisDir, 'dir'); mkdir(analysisDir); end
 
-eampdCandidates = cell(6, 1);
-eampdCandidates{1} = fullfile(projectRoot, 'Raw', 'EA_MPD', 'Dataset_EA-MPD.xlsx');
-eampdCandidates{2} = fullfile(projectRoot, 'Raw', 'EA_MPD', 'Dataset_EA_MPD.xlsx');
-eampdCandidates{3} = fullfile(projectRoot, 'Raw', 'EA_MPD', 'EA_MPD_clean.csv');
-eampdCandidates{4} = fullfile(projectRoot, 'Raw', 'EA_MPD', 'ea_mpd_clean.csv');
-eampdCandidates{5} = fullfile(projectRoot, 'Raw', 'EA_MPD', 'Dataset_EA-MPD.csv');
-eampdCandidates{6} = fullfile(projectRoot, 'Raw', 'EA_MPD', 'Dataset_EA_MPD.csv');
-
-eampdFile = Locate_first_existing(eampdCandidates);
+eampdFile = Locate_ea_policy_dataset(projectRoot);
 
 P = readtable(panelFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
@@ -125,10 +117,20 @@ if strlength(eampdFile) > 0
 
     matchSummary = table();
     matchSummary.eampd_file = string(eampdFile);
+    datasetNames = unique(string(E.eampd_dataset_name));
+    datasetNames = datasetNames(~ismissing(datasetNames) & ...
+        strlength(strtrim(datasetNames)) > 0);
+    matchSummary.dataset_name = strjoin(datasetNames, '|');
     matchSummary.n_pr_rows = height(PR);
     matchSummary.n_rows_matched = sum(hasAnyEA);
     matchSummary.n_rows_unmatched = sum(~hasAnyEA);
     matchSummary.match_rate = mean(hasAnyEA);
+    if ismember("eampd_window_timing_valid", string(PR.Properties.VariableNames))
+        matchSummary.n_rows_timing_invalid = sum(hasAnyEA & ...
+            ~PR.eampd_window_timing_valid);
+    else
+        matchSummary.n_rows_timing_invalid = 0;
+    end
 
 else
 
@@ -136,10 +138,12 @@ else
 
     matchSummary = table();
     matchSummary.eampd_file = "";
+    matchSummary.dataset_name = "";
     matchSummary.n_pr_rows = height(PR);
     matchSummary.n_rows_matched = 0;
     matchSummary.n_rows_unmatched = height(PR);
     matchSummary.match_rate = 0;
+    matchSummary.n_rows_timing_invalid = 0;
 end
 
 PR = sortrows(PR, {'event_date', 'root_code'});
@@ -193,6 +197,12 @@ function flag = rows_with_eampd_data(T)
     cols = string(T.Properties.VariableNames);
     cols = cols(startsWith(cols, "eampd_"));
 
+    if ismember("eampd_dataset_name", cols)
+        values = string(T.eampd_dataset_name);
+        flag = ~ismissing(values) & strlength(strtrim(values)) > 0;
+        return;
+    end
+
     for c = cols
 
         col = T.(c);
@@ -207,13 +217,7 @@ end
 
 function E = load_eampd_file(eampdFile)
 
-    [~, ~, ext] = fileparts(eampdFile);
-
-    if strcmpi(ext, '.xlsx') || strcmpi(ext, '.xls')
-        T = read_first_valid_sheet(eampdFile);
-    else
-        T = readtable(eampdFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
-    end
+    T = Read_ea_policy_window(eampdFile, "PR");
 
     names = string(T.Properties.VariableNames);
     dateVar = Find_column(names, ["event_date", "date", "Date", "meeting_date", "meetingday", "meeting_day", "govc_date", "eventday", "date_meeting"]);
@@ -237,6 +241,18 @@ function E = load_eampd_file(eampdFile)
     E = E(ia, :);
 
     E = add_canonical_ois_columns(E);
+
+    if ismember("eampd_window_timing_valid", string(E.Properties.VariableNames))
+        invalid = ~E.eampd_window_timing_valid;
+        canonical = ["ois_1m_raw", "ois_3m_raw", "ois_6m_raw", ...
+            "ois_1y_raw", "ois_2y_raw", "ois_3y_raw", "ois_4y_raw", ...
+            "ois_5y_raw", "ois_10y_raw"];
+        canonical = canonical(ismember(canonical, ...
+            string(E.Properties.VariableNames)));
+        for name = canonical
+            E.(name)(invalid) = NaN;
+        end
+    end
 
     if ismember("ois_1m_raw", string(E.Properties.VariableNames))
         E.shock_target = E.ois_1m_raw;
@@ -320,30 +336,9 @@ function v = row_mean(T, cols)
     v = mean(X, 2, 'omitnan');
 end
 
-function T = read_first_valid_sheet(fpath)
-
-    sh = sheetnames(fpath);
-
-    for i = 1:numel(sh)
-
-        try
-
-            T = readtable(fpath, 'Sheet', sh{i}, 'TextType', 'string', 'VariableNamingRule', 'preserve');
-
-            if width(T) >= 2
-                return;
-            end
-
-        catch
-        end
-    end
-
-    error('Nessun foglio utile in %s', fpath);
-end
-
 function col = coerce_column(col)
 
-    if isnumeric(col)
+    if isnumeric(col) || islogical(col) || isdatetime(col)
         return;
     end
 

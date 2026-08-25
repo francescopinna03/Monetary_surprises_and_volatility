@@ -28,29 +28,16 @@ if exist(analysisDir, 'dir') ~= 7
     mkdir(analysisDir);
 end
 
-eampdCandidates = {
-    fullfile(projectRoot, 'Raw', 'EA_MPD', 'Dataset_EA-MPD.xlsx');
-    fullfile(projectRoot, 'Raw', 'EA_MPD', 'Dataset_EA_MPD.xlsx');
-    fullfile(projectRoot, 'Raw', 'EA_MPD', 'EA-MPD.xlsx');
-    fullfile(projectRoot, 'Raw', 'EA_MPD', 'EA_MPD.xlsx')};
-eampdFile = Locate_first_existing(eampdCandidates);
+eampdFile = Locate_ea_policy_dataset(projectRoot);
 
 if strlength(eampdFile) == 0
-    error('STEP22_EAMPD_MISSING: no EA-MPD workbook was found under Raw/EA_MPD.');
+    error('STEP22_EAMPD_MISSING: no EA-EMPD or EA-MPD workbook was found.');
 end
 
-windowSheets = ["Press Release Window", "Press Conference Window", ...
-    "Monetary Event Window"];
 windowCodes = ["PR", "PC", "ME"];
 primaryRotationQuantile = 0.5;
 rotationGrid = [0.05, 0.16, 0.50, 0.84, 0.95];
-
-availableSheets = string(sheetnames(eampdFile));
-for s = windowSheets
-    if ~any(strcmpi(strtrim(availableSheets), s))
-        error('STEP22_SHEET_MISSING: required sheet "%s" was not found in %s.', s, eampdFile);
-    end
-end
+sourceLabels = strings(size(windowCodes));
 
 projectDates = load_project_event_dates(projectRoot);
 if isempty(projectDates)
@@ -71,8 +58,8 @@ fprintf('STEP 22 input: %s\n', eampdFile);
 
 for k = 1:numel(windowCodes)
     code = windowCodes(k);
-    sheet = windowSheets(k);
-    source = read_eampd_window(eampdFile, sheet);
+    source = read_eampd_window(eampdFile, code);
+    sourceLabels(k) = source.source_label;
 
     excludedJoint = ismember(source.event_date, jointAnnouncementDates);
     nExcludedJoint = sum(excludedJoint);
@@ -100,7 +87,7 @@ for k = 1:numel(windowCodes)
     W = table();
     W.event_date = source.event_date;
     W.window = repmat(code, nSource, 1);
-    W.source_sheet = repmat(sheet, nSource, 1);
+    W.source_sheet = repmat(source.source_label, nSource, 1);
     W.OIS_1M = source.ois(:, 1);
     W.OIS_3M = source.ois(:, 2);
     W.OIS_6M = source.ois(:, 3);
@@ -256,7 +243,7 @@ write_table_with_dates(rotationSensitivity, fullfile(analysisDir, ...
     'shock_components_rotation_sensitivity.csv'));
 
 manifest = build_step22_manifest(eampdFile, primaryRotationQuantile, ...
-    rotationGrid, windowSheets);
+    rotationGrid, sourceLabels);
 writetable(manifest, fullfile(analysisDir, 'shock_components_manifest.csv'));
 
 fprintf('\n================ STEP 22 SUMMARY ================\n');
@@ -268,23 +255,22 @@ fprintf('Rotation rows      : %d\n', height(rotationSensitivity));
 fprintf('Output directory   : %s\n', analysisDir);
 fprintf('=================================================\n');
 
-function source = read_eampd_window(filePath, sheet)
-    T = readtable(filePath, 'Sheet', sheet, 'TextType', 'string', ...
-        'VariableNamingRule', 'preserve');
+function source = read_eampd_window(filePath, phase)
+    [T, metadata] = Read_ea_policy_window(filePath, phase);
     names = string(T.Properties.VariableNames);
     normalized = normalize_names(names);
 
-    dateColumn = find_column(normalized, ["date", "event_date", "meeting_date"]);
+    dateColumn = find_column(normalized, ["event_date", "date", "meeting_date"]);
     oisColumns = [find_column(normalized, ["ois_1m", "ois1m"]), ...
         find_column(normalized, ["ois_3m", "ois3m"]), ...
         find_column(normalized, ["ois_6m", "ois6m"]), ...
         find_column(normalized, ["ois_1y", "ois1y"])] ;
-    stockColumn = find_column(normalized, ["stoxx50", "stoxx_50"]);
+    stockColumn = find_column(normalized, ["stoxx50", "stoxx50e", "stoxx_50"]);
 
     if strlength(dateColumn) == 0 || any(strlength(oisColumns) == 0) || ...
             strlength(stockColumn) == 0
-        error(['STEP22_COLUMNS_MISSING: sheet "%s" must contain date, OIS_1M, ' ...
-            'OIS_3M, OIS_6M, OIS_1Y and STOXX50.'], sheet);
+        error(['STEP22_COLUMNS_MISSING: phase "%s" must contain date, OIS_1M, ' ...
+            'OIS_3M, OIS_6M, OIS_1Y and STOXX50.'], phase);
     end
 
     source = struct();
@@ -294,6 +280,7 @@ function source = read_eampd_window(filePath, sheet)
         source.ois(:, j) = to_numeric(T.(names(normalized == oisColumns(j))));
     end
     source.stoxx50 = to_numeric(T.(names(normalized == stockColumn)));
+    source.source_label = metadata.source_sheet + ":" + metadata.source_window;
 
     keep = ~isnat(source.event_date);
     source.event_date = source.event_date(keep);
