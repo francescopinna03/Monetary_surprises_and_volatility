@@ -30,10 +30,6 @@ end
 
 eampdFile = Locate_ea_policy_dataset(projectRoot);
 
-if strlength(eampdFile) == 0
-    error('STEP22_EAMPD_MISSING: no EA-EMPD or EA-MPD workbook was found.');
-end
-
 windowCodes = ["PR", "PC", "ME"];
 primaryRotationQuantile = 0.5;
 rotationGrid = [0.05, 0.16, 0.50, 0.84, 0.95];
@@ -42,7 +38,7 @@ sourceLabels = strings(size(windowCodes));
 projectDates = load_project_event_dates(projectRoot);
 if isempty(projectDates)
     warning(['STEP22_PROJECT_DATES_MISSING: project event dates could not be read. ' ...
-        'Leave-one-out diagnostics will cover every eligible EA-MPD event.']);
+        'Leave-one-out diagnostics will cover every eligible EA-EMPD event.']);
 end
 
 components = table();

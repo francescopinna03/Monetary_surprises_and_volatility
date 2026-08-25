@@ -12,9 +12,8 @@ data_root="$1"
 manifest="$data_root/Output/manifests/time_alignment_manifest.csv"
 semantics_manifest="$data_root/Output/manifests/window_semantics_manifest.csv"
 
-if [ ! -d "$data_root/Raw/EA-EMPD" ] && [ ! -d "$data_root/Raw/EA_EMPD" ] && \
-        [ ! -d "$data_root/Raw/EA_MPD" ]; then
-    echo "EA-EMPD or EA-MPD directory not found under $data_root/Raw" >&2
+if [ ! -f "$data_root/Raw/EA-EMPD/EA-EMPD.xlsx" ]; then
+    echo "EA-EMPD workbook not found: $data_root/Raw/EA-EMPD/EA-EMPD.xlsx" >&2
     exit 2
 fi
 

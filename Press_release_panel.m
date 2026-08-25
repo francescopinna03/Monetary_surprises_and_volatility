@@ -105,44 +105,28 @@ okNeg = PR.PR_rsv_neg > 0 & ~isnan(PR.PR_rsv_neg);
 PR.PR_semivariance_ratio(okNeg) = PR.PR_rsv_pos(okNeg) ./ PR.PR_rsv_neg(okNeg);
 PR.analysis_sample = repmat("PR_baseline", height(PR), 1);
 
-if strlength(eampdFile) > 0
+fprintf('Reading EA-EMPD from:\n%s\n\n', eampdFile);
 
-    fprintf('Reading EA-MPD from:\n%s\n\n', eampdFile);
+E = load_eampd_file(eampdFile);
 
-    E = load_eampd_file(eampdFile);
+PR = outerjoin(PR, E, 'Keys', 'event_date', 'MergeKeys', true, 'Type', 'left');
 
-    PR = outerjoin(PR, E, 'Keys', 'event_date', 'MergeKeys', true, 'Type', 'left');
+hasAnyEA = rows_with_eampd_data(PR);
 
-    hasAnyEA = rows_with_eampd_data(PR);
-
-    matchSummary = table();
-    matchSummary.eampd_file = string(eampdFile);
-    datasetNames = unique(string(E.eampd_dataset_name));
-    datasetNames = datasetNames(~ismissing(datasetNames) & ...
-        strlength(strtrim(datasetNames)) > 0);
-    matchSummary.dataset_name = strjoin(datasetNames, '|');
-    matchSummary.n_pr_rows = height(PR);
-    matchSummary.n_rows_matched = sum(hasAnyEA);
-    matchSummary.n_rows_unmatched = sum(~hasAnyEA);
-    matchSummary.match_rate = mean(hasAnyEA);
-    if ismember("eampd_window_timing_valid", string(PR.Properties.VariableNames))
-        matchSummary.n_rows_timing_invalid = sum(hasAnyEA & ...
-            ~PR.eampd_window_timing_valid);
-    else
-        matchSummary.n_rows_timing_invalid = 0;
-    end
-
+matchSummary = table();
+matchSummary.eampd_file = string(eampdFile);
+datasetNames = unique(string(E.eampd_dataset_name));
+datasetNames = datasetNames(~ismissing(datasetNames) & ...
+    strlength(strtrim(datasetNames)) > 0);
+matchSummary.dataset_name = strjoin(datasetNames, '|');
+matchSummary.n_pr_rows = height(PR);
+matchSummary.n_rows_matched = sum(hasAnyEA);
+matchSummary.n_rows_unmatched = sum(~hasAnyEA);
+matchSummary.match_rate = mean(hasAnyEA);
+if ismember("eampd_window_timing_valid", string(PR.Properties.VariableNames))
+    matchSummary.n_rows_timing_invalid = sum(hasAnyEA & ...
+        ~PR.eampd_window_timing_valid);
 else
-
-    warning('EA-MPD non trovato: pannello PR senza merge shock.');
-
-    matchSummary = table();
-    matchSummary.eampd_file = "";
-    matchSummary.dataset_name = "";
-    matchSummary.n_pr_rows = height(PR);
-    matchSummary.n_rows_matched = 0;
-    matchSummary.n_rows_unmatched = height(PR);
-    matchSummary.match_rate = 0;
     matchSummary.n_rows_timing_invalid = 0;
 end
 
@@ -223,7 +207,7 @@ function E = load_eampd_file(eampdFile)
     dateVar = Find_column(names, ["event_date", "date", "Date", "meeting_date", "meetingday", "meeting_day", "govc_date", "eventday", "date_meeting"]);
 
     if strlength(dateVar) == 0
-        error('Colonna data non trovata in EA-MPD.');
+        error('Colonna data non trovata in EA-EMPD.');
     end
 
     E = table();
