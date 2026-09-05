@@ -1,7 +1,12 @@
 diary(fullfile(fileparts(mfilename('fullpath')), 'pipeline_run.log'));
 
 fprintf('Pipeline start %s\n', string(datetime('now')));
-fprintf('Data root: %s\n', Get_project_root());
+projectRoot = Get_project_root();
+surpriseSource = Surprise_source_config(projectRoot);
+setenv('SURPRISE_SOURCE', surpriseSource.source_id);
+fprintf('Data root: %s\n', projectRoot);
+fprintf('Surprise source: %s (%s)\n', surpriseSource.source_id, ...
+    surpriseSource.dataset_name);
 
 % The complete replication is an immutable final run.  Reduced-draw
 % overrides are accepted only by the dedicated smoke-test wrappers; they must
@@ -21,6 +26,9 @@ fprintf(['Locked inference draws: Steps 19--27 = 999; ' ...
 
 fprintf('\n[preflight] Time_alignment_self_test\n');
 Time_alignment_self_test();
+
+fprintf('\n[preflight] Surprise_source_self_test\n');
+Surprise_source_self_test();
 
 fprintf('\n[ 1/27] Audit_Barchart\n');
 Audit_Barchart;

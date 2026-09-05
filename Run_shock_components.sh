@@ -12,11 +12,6 @@ data_root="$1"
 manifest="$data_root/Output/manifests/time_alignment_manifest.csv"
 semantics_manifest="$data_root/Output/manifests/window_semantics_manifest.csv"
 
-if [ ! -f "$data_root/Raw/EA-EMPD/EA-EMPD.xlsx" ]; then
-    echo "EA-EMPD workbook not found: $data_root/Raw/EA-EMPD/EA-EMPD.xlsx" >&2
-    exit 2
-fi
-
 if [ ! -f "$manifest" ] || ! grep -q 'timezone_v1' "$manifest" || ! grep -q 'complete' "$manifest"; then
     echo "Corrected timezone_v1 manifest not found. Run the corrected pipeline first." >&2
     exit 2
@@ -28,6 +23,13 @@ if [ ! -f "$semantics_manifest" ] || ! grep -q 'window_semantics_v1' "$semantics
 fi
 
 export ECONOMETRICS_DATA_ROOT="$data_root"
+surprise_source="${SURPRISE_SOURCE:-EA_EMPD}"
+surprise_source="$(printf '%s' "$surprise_source" | tr '[:lower:]-' '[:upper:]_')"
+case "$surprise_source" in
+    EA_EMPD|EA_MPD) ;;
+    *) echo "SURPRISE_SOURCE must be EA_EMPD or EA_MPD." >&2; exit 2 ;;
+esac
+export SURPRISE_SOURCE="$surprise_source"
 
 if command -v matlab >/dev/null 2>&1; then
     matlab_bin="matlab"
@@ -40,5 +42,5 @@ if [ -z "${matlab_bin:-}" ]; then
     exit 1
 fi
 
-"$matlab_bin" -batch "cd('$repo_dir'); Shock_component_self_test; Shock_component_construction" 2>&1 \
+"$matlab_bin" -batch "cd('$repo_dir'); Surprise_source_self_test; Shock_component_self_test; Shock_component_construction" 2>&1 \
     | tee "$repo_dir/shock_components_run.log"

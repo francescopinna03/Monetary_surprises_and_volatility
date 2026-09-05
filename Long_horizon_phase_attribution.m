@@ -2,7 +2,7 @@ function Long_horizon_phase_attribution()
 %LONG_HORIZON_PHASE_ATTRIBUTION Step 26 official-factor attribution.
 %
 % The ABGMR Target/Timing/Forward-Guidance/QE factors are reconstructed from
-% the full seven-maturity EA-MPD curve.  Their information incremental to the
+% the selected seven-maturity policy curve. Their information incremental to the
 % Step-25 policy/equity plane is then tested in the paired PR-PC volatility
 % system.  Named attribution requires wild-cluster, grouped OOS, leave-top-k
 % and generated-factor leave-one-out stability evidence.
@@ -18,7 +18,8 @@ function Long_horizon_phase_attribution()
     if exist(outputDir, 'dir') ~= 7; mkdir(outputDir); end
 
     files = struct();
-    files.eampd = Locate_ea_policy_dataset(projectRoot);
+    [files.eampd, surpriseSource] = Locate_ea_policy_dataset(projectRoot);
+    Require_surprise_source_manifest(projectRoot, surpriseSource);
     files.components = fullfile(analysisDir, 'shock_components_by_event.csv');
     files.pr = fullfile(phaseDir, 'phase_counterfactual_pr_event_rows.csv');
     files.pc = fullfile(phaseDir, 'phase_counterfactual_pc_event_rows.csv');
@@ -46,12 +47,13 @@ function Long_horizon_phase_attribution()
     cfg.stabilityRelativeDelta = 0.25;
     cfg.stabilityLoadingCosine = 0.90;
     cfg.gapAttenuationThreshold = 0.50;
+    cfg.surpriseSource = surpriseSource;
     rng(cfg.seed, 'twister');
 
     C = load_components(files.components);
     [factorRows, factorLoadings, factorAudit, factorLoo, ...
         factorStability, constructionPass] = construct_factors( ...
-        files.eampd, C, cfg);
+        files.eampd, C, cfg, surpriseSource.source_id);
     [PR, prExtra, prResidualAudit] = prepare_phase( ...
         files.pr, C, factorRows, "PR");
     [PC, pcExtra, pcResidualAudit] = prepare_phase( ...
@@ -198,7 +200,7 @@ function C = load_components(filePath)
 end
 
 function [rows, loadings, audit, loo, stability, certified] = ...
-        construct_factors(filePath, C, cfg)
+        construct_factors(filePath, C, cfg, sourceId)
     phases = ["PR", "PC"];
     rowCells = cell(2, 1);
     loadingCells = cell(2, 1);
@@ -207,7 +209,7 @@ function [rows, loadings, audit, loo, stability, certified] = ...
 
     for h = 1:2
         phase = phases(h);
-        source = read_long_window(filePath, phase);
+        source = read_long_window(filePath, phase, sourceId);
         [distinctDates, ~, groups] = unique(source.event_date);
         counts = accumarray(groups, 1);
         if any(counts > 1)
@@ -296,8 +298,8 @@ function [rows, loadings, audit, loo, stability, certified] = ...
         all(audit.value(audit.metric == "n_project_rows") > 0);
 end
 
-function source = read_long_window(filePath, phase)
-    T = Read_ea_policy_window(filePath, phase);
+function source = read_long_window(filePath, phase, sourceId)
+    T = Read_ea_policy_window(filePath, phase, sourceId);
     names = string(T.Properties.VariableNames);
     normal = normalise_names(names);
     dateName = find_name(names, normal, ["date", "event_date", "meeting_date"], true);
@@ -825,7 +827,8 @@ function manifest = build_manifest(inputFiles, cfg)
         "factor_sample_start"; "pre_crisis_end"; "official_exclusions"; ...
         "incrementalisation"; "bootstrap_draws"; "seed"; ...
         "gap_attenuation_threshold"; "structural_boundary"; ...
-        "method_source"; "replication_source"; "input_files"; ...
+        "method_source"; "replication_source"; "surprise_source"; ...
+        "dataset_name"; "primary_estimation_source"; "input_files"; ...
         "input_sha256"; "code_commit"; "script_sha256"];
     values = ["step26_v1"; ...
         string(datetime('now', 'TimeZone', 'UTC'), 'yyyy-MM-dd''T''HH:mm:ssXXX'); ...
@@ -841,6 +844,9 @@ function manifest = build_manifest(inputFiles, cfg)
         "Target/Timing/FG/QE are curve signals, not a structural MP-CBI separation"; ...
         "https://www.ecb.europa.eu/pub/pdf/scpwps/ecb.wp2281~3303fd281b.en.pdf"; ...
         "https://www.bilkent.edu.tr/~refet/ABGMR_replication_files.zip"; ...
+        string(cfg.surpriseSource.source_id); ...
+        string(cfg.surpriseSource.dataset_name); ...
+        string(cfg.surpriseSource.is_primary); ...
         strjoin(inputFiles, '|'); strjoin(hashes, '|'); ...
         current_git_commit(here); ...
         File_sha256(fullfile(here, 'Long_horizon_phase_attribution.m'))];

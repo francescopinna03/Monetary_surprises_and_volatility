@@ -1,7 +1,6 @@
-function filePath = Locate_ea_policy_dataset(projectRoot)
+function [filePath, source] = Locate_ea_policy_dataset(projectRoot)
+%LOCATE_EA_POLICY_DATASET Resolve the run-level policy-surprise source.
 
-    filePath = fullfile(projectRoot, 'Raw', 'EA-EMPD', 'EA-EMPD.xlsx');
-    if exist(filePath, 'file') ~= 2
-        error('EA_EMPD_DATASET_MISSING: %s was not found.', filePath);
-    end
+    source = Surprise_source_config(projectRoot);
+    filePath = source.file_path;
 end

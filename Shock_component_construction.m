@@ -1,14 +1,14 @@
 %% STEP 22: MONETARY-POLICY AND CENTRAL-BANK-INFORMATION SHOCKS.
 %
 % This script reproduces and extends the Jarocinski-Karadi construction on
-% the EA-MPD workbook. Separate PR and PC median rotations are the primary
+% the selected policy-surprise workbook. Separate PR and PC median rotations are the primary
 % definitions; the Monetary Event window is an aggregate benchmark. Poor-man
 % shocks,
 % rotation-quantile sensitivity and leave-one-event-out diagnostics are
 % produced before any volatility outcome is loaded.
 %
 % Inputs:
-%   Raw/EA_MPD/Dataset_EA-MPD.xlsx (accepted spelling variants below)
+%   Raw/EA-EMPD/EA-EMPD.xlsx (default) or Raw/EA_MPD/Dataset_EA-MPD.xlsx
 %   Output/manifests/time_alignment_manifest.csv
 %
 % Outputs under Output/analysis:
@@ -28,7 +28,8 @@ if exist(analysisDir, 'dir') ~= 7
     mkdir(analysisDir);
 end
 
-eampdFile = Locate_ea_policy_dataset(projectRoot);
+[eampdFile, surpriseSource] = Locate_ea_policy_dataset(projectRoot);
+Require_surprise_source_manifest(projectRoot, surpriseSource);
 
 windowCodes = ["PR", "PC", "ME"];
 primaryRotationQuantile = 0.5;
@@ -38,7 +39,7 @@ sourceLabels = strings(size(windowCodes));
 projectDates = load_project_event_dates(projectRoot);
 if isempty(projectDates)
     warning(['STEP22_PROJECT_DATES_MISSING: project event dates could not be read. ' ...
-        'Leave-one-out diagnostics will cover every eligible EA-EMPD event.']);
+        'Leave-one-out diagnostics will cover every eligible source event.']);
 end
 
 components = table();
@@ -50,11 +51,12 @@ windowFits = cell(numel(windowCodes), 1);
 jointAnnouncementDates = datetime([2001, 2001, 2008], [9, 9, 10], ...
     [13, 17, 8])';
 
-fprintf('STEP 22 input: %s\n', eampdFile);
+fprintf('STEP 22 input: %s (%s) | %s\n', surpriseSource.source_id, ...
+    surpriseSource.dataset_name, eampdFile);
 
 for k = 1:numel(windowCodes)
     code = windowCodes(k);
-    source = read_eampd_window(eampdFile, code);
+    source = read_eampd_window(eampdFile, code, surpriseSource.source_id);
     sourceLabels(k) = source.source_label;
 
     excludedJoint = ismember(source.event_date, jointAnnouncementDates);
@@ -71,7 +73,7 @@ for k = 1:numel(windowCodes)
         duplicateText = strjoin(string(duplicateDates, 'yyyy-MM-dd'), ', ');
         error(['STEP22_DUPLICATE_DATES: unexpected duplicate event dates in ' ...
             'sheet "%s" after excluding joint announcements: %s.'], ...
-            sheet, duplicateText);
+            source.source_label, duplicateText);
     end
 
     baseSample = ~isnat(source.event_date);
@@ -238,8 +240,8 @@ write_table_with_dates(leaveOneOut, fullfile(analysisDir, ...
 write_table_with_dates(rotationSensitivity, fullfile(analysisDir, ...
     'shock_components_rotation_sensitivity.csv'));
 
-manifest = build_step22_manifest(eampdFile, primaryRotationQuantile, ...
-    rotationGrid, sourceLabels);
+manifest = build_step22_manifest(eampdFile, surpriseSource, ...
+    primaryRotationQuantile, rotationGrid, sourceLabels);
 writetable(manifest, fullfile(analysisDir, 'shock_components_manifest.csv'));
 
 fprintf('\n================ STEP 22 SUMMARY ================\n');
@@ -251,8 +253,8 @@ fprintf('Rotation rows      : %d\n', height(rotationSensitivity));
 fprintf('Output directory   : %s\n', analysisDir);
 fprintf('=================================================\n');
 
-function source = read_eampd_window(filePath, phase)
-    [T, metadata] = Read_ea_policy_window(filePath, phase);
+function source = read_eampd_window(filePath, phase, sourceId)
+    [T, metadata] = Read_ea_policy_window(filePath, phase, sourceId);
     names = string(T.Properties.VariableNames);
     normalized = normalize_names(names);
 
@@ -489,12 +491,15 @@ function write_table_with_dates(T, filePath)
     writetable(Tcopy, filePath);
 end
 
-function manifest = build_step22_manifest(inputFile, primaryQ, grid, sheets)
+function manifest = build_step22_manifest(inputFile, surpriseSource, primaryQ, grid, sheets)
     names = [
         "schema_version";
         "created_utc";
         "input_file";
         "input_sha256";
+        "surprise_source";
+        "dataset_name";
+        "primary_estimation_source";
         "primary_windows";
         "aggregate_benchmark_window";
         "primary_rotation_quantile";
@@ -523,8 +528,11 @@ function manifest = build_step22_manifest(inputFile, primaryQ, grid, sheets)
     values = [
         "step22_v1";
         string(datetime('now', 'TimeZone', 'UTC'), 'yyyy-MM-dd''T''HH:mm:ssXXX');
-        string(inputFile);
+        string(surpriseSource.relative_path);
         sha256_file(inputFile);
+        string(surpriseSource.source_id);
+        string(surpriseSource.dataset_name);
+        string(surpriseSource.is_primary);
         "PR|PC";
         "ME";
         string(primaryQ);

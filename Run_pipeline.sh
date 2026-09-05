@@ -23,6 +23,17 @@ fi
 export ECONOMETRICS_DATA_ROOT="$data_root"
 export STEP21_GIT_SHA="$(git -C "$repo_dir" rev-parse HEAD 2>/dev/null || printf 'unavailable')"
 
+surprise_source="${SURPRISE_SOURCE:-EA_EMPD}"
+surprise_source="$(printf '%s' "$surprise_source" | tr '[:lower:]-' '[:upper:]_')"
+case "$surprise_source" in
+    EA_EMPD|EA_MPD) ;;
+    *)
+        echo "SURPRISE_SOURCE must be EA_EMPD or EA_MPD." >&2
+        exit 2
+        ;;
+esac
+export SURPRISE_SOURCE="$surprise_source"
+
 # Run_pipeline.m repeats this lock inside MATLAB so that both supported entry
 # points (shell and direct MATLAB invocation) produce the same final run.
 export ANNOUNCEMENT_VALIDATION_DRAWS=999

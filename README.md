@@ -9,8 +9,10 @@
 > corrected, certified event windows; the earlier naive-clock estimates are
 > not part of the current evidence.
 >
-> The current public scope ends at Step 27. MP–CBI attribution is treated as
-> set-identified rather than point-identified. The final feasibility gate
+> The certified empirical scope ends at Step 27; Step 28 currently exposes
+> only its fail-closed data gate and tested analytic SBB kernel. MP–CBI
+> attribution is treated as set-identified rather than point-identified. The
+> final feasibility gate
 > admits the common-direction rank-one restriction but blocks dynamic-operator
 > estimation because the 111-meeting bivariate panel lacks adequate power.
 > Step 27 does not estimate an observed jump.
@@ -152,6 +154,38 @@ above the frozen grid. Worst-sign power at \(\rho=0.50\) is 4.5% for intensity,
 4.9%, 13.5% and 22.4%. Dynamic operator estimation is therefore blocked for
 lack of power. Step 27 never estimates an observed jump.
 
+### Step 28 implementation boundary
+
+Step 28A prepares a homogeneous Schatz--Bobl--Bund panel and ten exact-clock
+controls per event from the Barchart 5-minute files in
+`Raw/Barchart_futures/`. `Run_step28.sh` first runs the standard-library
+Python preparation (`step28_prepare_barchart.py`), then invokes MATLAB for
+the fail-closed data gate and the exact analytic Dirac--Gaussian SBB kernel
+self-test. Files outside the 165-contract universe remain in `raw` and are
+recorded as ignored; they do not enter selection or estimation. The required
+HRU24 file must be present for the data gate to pass.
+
+The current stopping point is deliberately before event-return estimation:
+the certified coverage counts must be reviewed and the outcome-free
+sample-size/spectral calibration frozen before the Markov-power and Gaussian
+gates, and only then the empirical SBB profiles, can run. A stopped gate is
+an output of the protocol, not an invitation to bypass it. The Barchart
+canonicalization, selection rules, manifest contract and output files are
+documented in `STEP28_SBBTS.md`.
+
+The policy-surprise input is independent of this market-data gate. Primary
+estimation defaults to `EA_EMPD`; the legacy `EA_MPD` column is regenerated
+from source with:
+
+```bash
+SURPRISE_SOURCE=EA_MPD ./Run_pipeline.sh /path/to/Econometrics_data
+```
+
+Step 6 records the selector, input hash, produced-output hashes, Git commit,
+dirty-worktree flag and routing-code hashes in
+`Output/manifests/surprise_source_manifest.csv`. Downstream source-dependent
+steps reject mismatches.
+
 ## Notes on reproducibility
 
 The code is written in MATLAB and uses standard table, datetime and matrix operations. 
@@ -239,7 +273,7 @@ pipeline.
 | 4 | `Event_panel_construction.m` | Constructs the ECB event panel, converts Europe/Berlin event clocks to UTC, and links monetary policy dates to available futures contract-days. |
 | 4 audit | `Event_time_alignment_audit.m` | Compares corrected, +/-5-minute and legacy event bars without selecting a specification from their outcomes. |
 | 5 | `Event_windows.m` | Extracts intraday PR, PC and announcement windows from the preferred futures contracts. |
-| 6 | `Press_release_panel.m` | Builds the baseline press-release panel and merges it with EA-MPD-style monetary surprise data. |
+| 6 | `Press_release_panel.m` | Builds the baseline press-release panel and merges the selected EA-EMPD/EA-MPD surprise source. |
 | 7 | `Regression_fractional.m` | Estimates fractional-response QMLE models for the negative semivariance share. |
 | 8 | `PR_signal_model.m` | Constructs PR-only signal variables and estimates first-pass linear signal regressions. |
 | 9 | `State_vector_panel.m` | Constructs the event-level state vector and merges it into the long press-release panel. |
@@ -328,7 +362,7 @@ The distinction between `Clean_raw_files.m` and `clean_single_barchart_file.m` i
 
 The raw and intermediate input files required to reproduce the empirical workflow are not stored directly in this repository. They are provided separately together with the draft of the paper, in order to keep the code repository lightweight and to separate the computational routines from the data package.
 
-The replication package is expected to contain the files required by the MATLAB pipeline, including all 104 raw Barchart intraday futures CSV files at five-minute frequency, the ECB monetary policy meeting calendar, including event dates, press-release times and press-conference time, EA-MPD monetary surprise data (Altavilla et al. (2019)), OIS changes used to construct target and path surprise measures and the auxiliary input files needed to reproduce the intermediate panels used in the paper
+The replication package is expected to contain the files required by the MATLAB pipeline, including the 165 frozen Step-28 Barchart intraday futures CSV files at five-minute frequency (additional raw files may remain in the folder and are ignored by the Step-28 preparer), the ECB monetary policy meeting calendar, including event dates, press-release times and press-conference time, EA-EMPD monetary surprise data for primary estimation, the legacy EA-MPD workbook for the reproducible robustness run, OIS changes used to construct target and path surprise measures and the auxiliary input files needed to reproduce the intermediate panels used in the paper.
 
 Once the data package has been placed locally, the scripts locate it automatically through `Get_project_root.m` as described in the reproducibility notes above. No path needs to be edited in the source files.
 
@@ -339,7 +373,8 @@ Econometrics_data/
 ├── Raw/
 │   ├── Barchart_futures/
 │   ├── ECB_calendar/
-│   └── EA_MPD/
+│   ├── EA-EMPD/        # primary default: EA-EMPD.xlsx
+│   └── EA_MPD/         # reproducible legacy robustness input
 └── Output/
     ├── manifests/
     ├── cleaned/

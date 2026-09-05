@@ -11,9 +11,10 @@
 % semivariance shares, the semivariance imbalance and the positive-to-negative
 % semivariance ratio.
 %
-% The script then merges the PR event-window panel with the EA-MPD monetary
-% policy surprise dataset. The merge is performed at the event-date level.
-% EA-MPD variables are prefixed with eampd_, while selected OIS changes are
+% The script then merges the PR event-window panel with the run-level policy
+% surprise dataset. The merge is performed at the event-date level. Imported
+% variables retain the historical eampd_ prefix for output-schema
+% compatibility, while selected OIS changes are
 % also copied into canonical columns such as ois_1m_raw, ois_2y_raw and
 % ois_5y_raw. The one-month OIS change is used as the baseline target
 % surprise whenever available.
@@ -23,8 +24,8 @@
 % monetary policy surprises, and it is used by the fractional-response models,
 % the PR signal regressions and the later state-dependent specifications.
 %
-% Input files are Output/event_windows/event_window_panel.csv and the EA-MPD
-% dataset located in Raw/EA_MPD when available. Output files are
+% Inputs are Output/event_windows/event_window_panel.csv and the source
+% selected by SURPRISE_SOURCE. Output files are
 % Output/analysis/pr_baseline_panel.csv and
 % Output/analysis/pr_baseline_match_summary.csv.
 
@@ -39,7 +40,7 @@ panelFile = fullfile(windowDir, 'event_window_panel.csv');
 
 if ~exist(analysisDir, 'dir'); mkdir(analysisDir); end
 
-eampdFile = Locate_ea_policy_dataset(projectRoot);
+[eampdFile, surpriseSource] = Locate_ea_policy_dataset(projectRoot);
 
 P = readtable(panelFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
 
@@ -105,9 +106,10 @@ okNeg = PR.PR_rsv_neg > 0 & ~isnan(PR.PR_rsv_neg);
 PR.PR_semivariance_ratio(okNeg) = PR.PR_rsv_pos(okNeg) ./ PR.PR_rsv_neg(okNeg);
 PR.analysis_sample = repmat("PR_baseline", height(PR), 1);
 
-fprintf('Reading EA-EMPD from:\n%s\n\n', eampdFile);
+fprintf('Reading %s (%s) from:\n%s\n\n', surpriseSource.dataset_name, ...
+    surpriseSource.source_id, eampdFile);
 
-E = load_eampd_file(eampdFile);
+E = load_eampd_file(eampdFile, surpriseSource);
 
 PR = outerjoin(PR, E, 'Keys', 'event_date', 'MergeKeys', true, 'Type', 'left');
 
@@ -115,6 +117,8 @@ hasAnyEA = rows_with_eampd_data(PR);
 
 matchSummary = table();
 matchSummary.eampd_file = string(eampdFile);
+matchSummary.surprise_source = string(surpriseSource.source_id);
+matchSummary.source_file_sha256 = File_sha256(eampdFile);
 datasetNames = unique(string(E.eampd_dataset_name));
 datasetNames = datasetNames(~ismissing(datasetNames) & ...
     strlength(strtrim(datasetNames)) > 0);
@@ -137,6 +141,8 @@ matchOutFile = fullfile(analysisDir, 'pr_baseline_match_summary.csv');
 
 writetable(format_pr_panel_for_write(PR), panelOutFile);
 writetable(matchSummary, matchOutFile);
+Write_surprise_source_manifest(projectRoot, surpriseSource, panelOutFile, ...
+    matchOutFile);
 
 fprintf('\n================ PR BASELINE PANEL SUMMARY ================\n');
 fprintf('PR-eligible rows              : %d\n', height(PR));
@@ -199,15 +205,15 @@ function flag = rows_with_eampd_data(T)
     end
 end
 
-function E = load_eampd_file(eampdFile)
+function E = load_eampd_file(eampdFile, surpriseSource)
 
-    T = Read_ea_policy_window(eampdFile, "PR");
+    T = Read_ea_policy_window(eampdFile, "PR", surpriseSource.source_id);
 
     names = string(T.Properties.VariableNames);
     dateVar = Find_column(names, ["event_date", "date", "Date", "meeting_date", "meetingday", "meeting_day", "govc_date", "eventday", "date_meeting"]);
 
     if strlength(dateVar) == 0
-        error('Colonna data non trovata in EA-EMPD.');
+        error('Colonna data non trovata in %s.', surpriseSource.dataset_name);
     end
 
     E = table();

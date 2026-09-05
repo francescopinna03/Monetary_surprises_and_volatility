@@ -6,7 +6,7 @@
 % with a fractional-response logit QMLE.
 %
 % It is used the baseline PR panel built in the previous step and
-% constructs monetary-policy surprise regressors from EA-MPD and OIS changes.
+% constructs monetary-policy surprise regressors from the Step-6 policy input.
 % When the relevant OIS maturities are available, target and path factors are
 % extracted through a PCA-based rotation inspired by the high-frequency
 % monetary policy shock literature. The path factor is then orthogonalized

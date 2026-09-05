@@ -10,3 +10,4 @@ shock_components_run.log
 component_sufficiency_run.log
 phase_component_contrasts_run.log
 invariant_phase_attribution_run.log
+__pycache__/
