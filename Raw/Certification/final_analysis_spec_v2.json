@@ -1,0 +1,226 @@
+{
+  "bar_minutes": 5,
+  "bootstrap_scope": "conditional_on_indicators_and_fitted_normal_continuation",
+  "bridge_counterfactual": "leave-year-out normal continuation and state scaling on generation controls only",
+  "bridge_draws": 19999,
+  "bridge_ea_equity_units": "percent_change_divide_by_100_before_SD_comparison",
+  "bridge_p_ratio_objects": [
+    "MP_cone_mean",
+    "MP_minus_CBI_cone_mean"
+  ],
+  "bridge_scaling": "PR generation controls for futures; PR generation events for external equity; no centering",
+  "bridge_thresholds": {
+    "correlation": 0.9,
+    "p_ratio": 3.0,
+    "sd_ratio_lower": 0.7,
+    "sd_ratio_upper": 1.4
+  },
+  "calibration": {
+    "delta_grid": [
+      0.0,
+      0.05,
+      0.1,
+      0.2,
+      0.3,
+      0.5
+    ],
+    "draws": 999,
+    "noise": "leave-year-out abnormal log BV of non-event Bund PR root-days, resampled within calendar year",
+    "power_partial_r2_grid": [
+      0,
+      0.02,
+      0.05,
+      0.1,
+      0.2,
+      0.3
+    ],
+    "power_target": 0.8,
+    "replications": 499
+  },
+  "confirmation_equity_source": "pending_bridge_and_protocol_review",
+  "confirmation_outcomes_may_be_read": false,
+  "eras": {
+    "early": [
+      "2000-01-01",
+      "2007-12-31"
+    ],
+    "late": [
+      "2008-01-01",
+      "2012-12-31"
+    ]
+  },
+  "event_timezone": "Europe/Berlin",
+  "expected_confirmation_dates_diagnostic_only": 181,
+  "expected_new_contracts_diagnostic_only": 164,
+  "history_bootstrap_replications": 999,
+  "history_calibrated_margin": "pending_design_only_power_calibration",
+  "history_indicator": "OIS_1Y",
+  "history_reference_margin": 0.02,
+  "minimum_controls": 100,
+  "minimum_event_clusters": 30,
+  "outcome_primary": "BV",
+  "outcome_sensitivity": "RV",
+  "pc_normal_pre_return_endpoints_minutes": [
+    -25,
+    -20,
+    -15,
+    -10,
+    -5
+  ],
+  "pc_return_endpoints_minutes": [
+    5,
+    10,
+    15,
+    20,
+    25,
+    30,
+    35,
+    40,
+    45
+  ],
+  "post_opening_exploratory": "exploratory.py runs only on a frozen build already opened; its manifest records prior_results_seen for 2000-2012 as true and it never modifies the confirmation verdict",
+  "pr_return_endpoints_minutes": [
+    5,
+    10,
+    15,
+    20,
+    25
+  ],
+  "pre_pr_return_endpoints_minutes": [
+    -55,
+    -50,
+    -45,
+    -40,
+    -35,
+    -30,
+    -25,
+    -20,
+    -15,
+    -10,
+    -5
+  ],
+  "primary_coordinates": {
+    "u": "u_primary",
+    "z": "z_primary"
+  },
+  "primary_family": {
+    "alpha": 0.05,
+    "alternative": "greater",
+    "draws": 19999,
+    "multiplicity": "Holm",
+    "name": "primary_confirmation",
+    "size": 2
+  },
+  "primary_hypotheses": [
+    "PR_Bund_MP_cone_curvature_gt_zero_at_state_zero",
+    "PR_Bund_MP_minus_CBI_cone_curvature_gt_zero_at_state_zero"
+  ],
+  "primary_root": "gg",
+  "raw_basis": [
+    "intercept",
+    "u_squared",
+    "z_squared",
+    "two_u_z",
+    "state",
+    "state_u_squared",
+    "state_z_squared",
+    "state_two_u_z"
+  ],
+  "raw_timezone": "America/Chicago",
+  "required_before_freeze": [
+    "verified_event_calendar_and_external_window_timing",
+    "deep_archive_bar_label_evidence",
+    "complete_pre_only_session_and_price_quality_audit",
+    "generation_only_bridge_review",
+    "reviewed_decisions_file",
+    "protected_control_build",
+    "outcome_free_calibration"
+  ],
+  "roots": [
+    "gg",
+    "hf",
+    "hr",
+    "fx"
+  ],
+  "samples": {
+    "bridge": [
+      "2013-01-01",
+      "2025-12-31"
+    ],
+    "confirmation": [
+      "2000-01-01",
+      "2012-12-31"
+    ],
+    "generation": [
+      "2013-01-01",
+      "2025-12-31"
+    ],
+    "pooled_descriptive": [
+      "2000-01-01",
+      "2025-12-31"
+    ]
+  },
+  "schema_version": "final_analysis_v2_preparation_2",
+  "secondary_family": {
+    "alpha": 0.05,
+    "draws": 19999,
+    "interval_rule": "single joint finite-history block reported as an interval with its calibrated floor; not a claim of sufficiency",
+    "multiplicity": "Holm",
+    "name": "secondary_declared",
+    "size": 8,
+    "size_note": "two cone hypotheses times four declared tests (slope, RV outcome, two eras)",
+    "tests": [
+      {
+        "id": "state_modulation",
+        "kind": "slope",
+        "note": "two-sided cone functionals of the state-interaction matrix"
+      },
+      {
+        "id": "rv_outcome",
+        "kind": "outcome_rv",
+        "note": "same contrasts on abnormal log RV"
+      },
+      {
+        "id": "era_split",
+        "kind": "era",
+        "note": "H1 and H2 within each declared era"
+      }
+    ]
+  },
+  "seed": 20260912,
+  "sensitivity_family": {
+    "alternative_indicators": [
+      {
+        "u": "schatz_bobl_aligned_u",
+        "z": "z_primary"
+      },
+      {
+        "u": "ois1y_expost_u",
+        "z": "stoxx50e_z"
+      },
+      {
+        "u": "ea_pc1_expost_u",
+        "z": "stoxx50e_z"
+      }
+    ],
+    "alternative_roots": [
+      "hf",
+      "hr"
+    ],
+    "claim_scope": "descriptive_no_simultaneous_claim",
+    "draws": 999,
+    "leave_top_k": [
+      0,
+      1,
+      3,
+      5
+    ],
+    "name": "sensitivity_descriptive",
+    "us_screen": true
+  },
+  "source_phase_is_actual_conference": false,
+  "status": "draft_not_frozen",
+  "step28": "outcome_free_calibration_only_in_separate_diagnostic_spec_no_SBB_estimation",
+  "volume_peaks_are_binding_gates": false,
+  "window_support_note": "Each endpoint t uses prices at t-5 and t. PR support is (0,25], PC is (0,45], state is (-60,-5]. PC normal-pre follows v1 (-30,-5], differing from the plan prose (-25,-5]; review before freeze."
+}
