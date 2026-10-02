@@ -1,0 +1,138 @@
+{
+  "schema_version": "final_analysis_v1",
+  "status": "frozen_before_new_estimation_after_exploratory_audit",
+  "prior_results_seen": true,
+  "research_levels": [
+    "conditional_mean_and_finite_history_sufficiency",
+    "phase_heterogeneity_and_set_attribution",
+    "dynamic_design_limitations_steps26_28"
+  ],
+  "bar_minutes": 5,
+  "canonical_time": "interval_end_utc",
+  "pr_return_endpoints_minutes": [
+    5,
+    10,
+    15,
+    20,
+    25
+  ],
+  "pc_return_endpoints_minutes": [
+    5,
+    10,
+    15,
+    20,
+    25,
+    30,
+    35,
+    40,
+    45
+  ],
+  "pre_pr_return_endpoints_minutes": [
+    -55,
+    -50,
+    -45,
+    -40,
+    -35,
+    -30,
+    -25,
+    -20,
+    -15,
+    -10,
+    -5
+  ],
+  "return_support": "(endpoint-5min, endpoint]; PR=(0,+25], PC=(0,+45], state=(-60,-5] relative to PR",
+  "minimum_return_coverage": 1.0,
+  "primary_roots": [
+    "fx",
+    "gg"
+  ],
+  "robustness_roots": [
+    "fx",
+    "gg",
+    "hf",
+    "hr"
+  ],
+  "contract_selection": [
+    "complete_pre_pr_pairs_desc",
+    "pre_pr_coverage_desc",
+    "pre_pr_volume_desc",
+    "filename_asc"
+  ],
+  "outcome_primary": "abnormal_log_BV",
+  "outcome_sensitivity": "abnormal_log_RV",
+  "bipower": "pi/2 times sum of adjacent absolute return products; no finite-M correction; zero BV excluded from logarithm",
+  "interpretation": "bipower proxy and RV-minus-BV residual; no structural continuous/jump identification",
+  "counterfactual": "non-ECB root-phase OLS: phase-pre log measure, square, lagged 5-day log RV, clock regime, trend, weekday and month indicators; PR pre endpoints -55:-5, PC pre endpoints -25:-5 relative to PC",
+  "counterfactual_validation": "leave-calendar-year-out; all nuisance centering and state scaling learned on training controls",
+  "minimum_controls": 100,
+  "minimum_event_clusters": 30,
+  "phase_indicators": [
+    "schatz_aligned",
+    "schatz_bobl_aligned",
+    "ois1y_expost",
+    "ea_pc1_expost"
+  ],
+  "curve_primary": "negative log Schatz futures return; equity is aligned fx net return; common PR-PC non-event standard-deviation units, no centering",
+  "curve_sensitivity": "equal-weight mean of control-SD scaled negative Schatz and Bobl returns; same aligned equity",
+  "ois_sensitivity": "EA-EMPD OIS1Y /10 and STOXX50E: original source windows, explicitly ex post for PC",
+  "phase_comparison_sample": "paired PR-PC root-event complete cases within each indicator/outcome; additional common sample across all indicators",
+  "rotation_quantiles": [
+    0.1,
+    0.25,
+    0.5,
+    0.75,
+    0.9
+  ],
+  "leave_top_k": [
+    0,
+    1,
+    3,
+    5
+  ],
+  "influence_ranking": "meeting-level sum over phases of squared policy/equity coordinates; MP and CBI energy rankings also reported",
+  "state_levels": [
+    -1,
+    0,
+    1
+  ],
+  "level1_mean_surprise": "EA-EMPD PR OIS1M /10, signed and absolute, plus pre-state and surprise*state, regime and asset FE",
+  "level1_history": [
+    "lag1_PR_OIS1M",
+    "mean_previous3_PR_OIS1M"
+  ],
+  "history_order": "complete source GC_PR calendar before event or outcome exclusions; missing lag remains missing",
+  "sufficiency_scope": "incremental predictability of these two observed history variables only; non-rejection is not Markov sufficiency",
+  "history_partial_r2_margin": 0.02,
+  "power_partial_r2_grid": [
+    0,
+    0.01,
+    0.02,
+    0.05,
+    0.1,
+    0.2,
+    0.3
+  ],
+  "power_replications": 499,
+  "power_target": 0.8,
+  "power_scope": "event-level fixed-design conditional calibration along both residualized history coordinates; no universal sample-size claim",
+  "wild_cluster_draws": 999,
+  "wild_null": "restricted OLS, Rademacher sign per meeting shared across assets and phases, CR1 studentization, plus-one p-values",
+  "bootstrap_scope": "conditional on measured indicators and fitted normal-continuation layer; generated-regressor uncertainty is not integrated",
+  "alpha": 0.05,
+  "multiplicity": "Holm within each declared primary family; RV, rotations, influence and alternative proxies are sensitivity families",
+  "us_release_screen": "08:30 America/New_York candidate timestamp on every weekday, exact DST; candidate is not a verified release",
+  "us_release_sensitivity": "exclude any paired meeting whose PR or PC return support intersects the candidate timestamp (including boundary coincidences conservatively); refit controls on same screen",
+  "us_release_calendar_optional": "Raw/Certification/us_releases.csv: release_id,timestamp_utc,source_url; actual release verification remains separate",
+  "threshold_search": "disabled",
+  "seed": 20260910,
+  "closed_extensions": [
+    26,
+    27,
+    28
+  ],
+  "state_standardization": "pre-PR log BV only, scaled once on non-ECB complete pre-PR controls by root, independent of outcome and phase; training controls only in leave-year-out prediction",
+  "counterfactual_pc_interpretation": "normal continuation conditional on the immediate pre-PC environment; this can contain PR news, and is distinct from the pre-PR interaction state",
+  "level1_sufficiency_unit": "equal-weight mean of fx and gg abnormal log BV, both assets required for the meeting",
+  "us_release_mean_sensitivity": "scalar PR branch excludes only PR candidate coincidences; its non-ECB controls use the same PR-only date screen",
+  "jk_rotation_sample": "complete paired meeting-phase observations within the declared analysis sample; refit after top-K removal; this project-sample rotation differs from the historical full-source rotation"
+}

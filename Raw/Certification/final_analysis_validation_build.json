@@ -1,0 +1,53 @@
+{
+  "code_hashes": {
+    "Raw/Certification/final_analysis_spec_v1.json": "e725f8eac29cd755c55e4e7b28a7cb3dfad6b64098daa907cb0b3d70e96035d8",
+    "final_analysis/__init__.py": "47d3709d24867686fe00859ea21b71371874c4e5cd2cf0b4094afa5b6030c59c",
+    "final_analysis/battery.py": "6535c140ba5cde29ee729148188e2f5cc8fa0d1ccf6bde7d9e025550c08377dc",
+    "final_analysis/data.py": "2488cf420d4d3f0e607ad0e3ca1a04eb8e21ea438f9b0e47c16872327c0f5376",
+    "final_analysis/models.py": "8d668434fcb77c90f5fdf85ac75f45c7c6bc9854deed87df10407c006f91a500",
+    "final_analysis/run.py": "2fea62f2364ba3719c0afbe7034cf867baae47758847e26dfcf1517a0749307d"
+  },
+  "created_utc": "2026-09-10T20:28:25.636938+00:00",
+  "n_calendar_events": 114,
+  "n_primary_eligible": 456,
+  "n_root_phase_rows": 912,
+  "prior_results_seen": true,
+  "schema_version": "final_analysis_v1",
+  "specification_sha256": "6f4e6364724d553e2bffdaa8480a123a7e1a4e26a80a7b080873c329bc1c9b47",
+  "status": "validation_record_only",
+  "us_calendar_status": "candidate_screen_only",
+  "purpose": "Validation build metadata; executable builds are generated locally with freeze",
+  "source_hashes_sha256_manifest": "See locally generated input_hashes.json and status.json; full source paths are reconstructed by freeze",
+  "run_manifest": {
+    "bootstrap_scope": "conditional on measured indicators and fitted normal-continuation layer; generated-regressor uncertainty is not integrated",
+    "build_manifest_sha256": "d56f2448267c2beeaeaa317232ec4efb7afa5798aae435a91db1e44eb82948f5",
+    "claim_gate": "conditional_inference_only_macro_calendar_status_recorded",
+    "closed_extensions": [
+      26,
+      27,
+      28
+    ],
+    "code_hashes": {
+      "Raw/Certification/final_analysis_spec_v1.json": "e725f8eac29cd755c55e4e7b28a7cb3dfad6b64098daa907cb0b3d70e96035d8",
+      "final_analysis/__init__.py": "47d3709d24867686fe00859ea21b71371874c4e5cd2cf0b4094afa5b6030c59c",
+      "final_analysis/battery.py": "6535c140ba5cde29ee729148188e2f5cc8fa0d1ccf6bde7d9e025550c08377dc",
+      "final_analysis/data.py": "2488cf420d4d3f0e607ad0e3ca1a04eb8e21ea438f9b0e47c16872327c0f5376",
+      "final_analysis/models.py": "8d668434fcb77c90f5fdf85ac75f45c7c6bc9854deed87df10407c006f91a500",
+      "final_analysis/run.py": "2fea62f2364ba3719c0afbe7034cf867baae47758847e26dfcf1517a0749307d"
+    },
+    "created_utc": "2026-09-10T20:30:51.037051+00:00",
+    "draws": 999,
+    "git_dirty": true,
+    "git_sha": "af799bae170d1ecfc3be6aefcc74a8111c06b816",
+    "mode": "frozen_full",
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "power_replications": 499,
+    "primary_outcome": "abnormal_log_BV",
+    "python": "3.12.14",
+    "scipy": "1.17.0",
+    "seed": 20260910,
+    "status": "complete_conditional_inference",
+    "us_calendar_status": "candidate_screen_only"
+  }
+}

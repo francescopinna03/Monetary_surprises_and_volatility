@@ -1,0 +1,15 @@
+{
+  "purpose": "Hash-verified fallback for the frozen generation-only MATLAB run",
+  "scope": "Only the two frozen Output/manifests inputs are bundled. No raw prices, confirmation data, cleaned data or outcomes are included.",
+  "source_archive": "Monetary_surprises_FULL_rqjB5J_finish_20260911_182722_5429_results.zip",
+  "source_member_root": "Econometrics_data/Output/manifests",
+  "source_run": "run_finish_182722",
+  "copied_unchanged": true,
+  "files": {
+    "Output/manifests/time_alignment_manifest.csv": "a67fc7890b4539b85050d551a509790014406949698a6901018d4a3ea73a4599",
+    "Output/manifests/window_semantics_manifest.csv": "480cf7a7c2a7795bd844f68f6d1763ccf96be12ef5fdd901491d9013d407a501"
+  },
+  "use_rule": "facility_archive.frozen_copy accepts these bytes only when their SHA-256 equals the frozen status.json source hash; active data-root files take precedence when they match.",
+  "confirmation_data_included": false,
+  "confirmation_outcomes_computed": false
+}

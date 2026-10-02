@@ -1,0 +1,4 @@
+artifact,status,reason,replacement
+Output/paper_tables/* (April archive),superseded_for_canonical_window_claims,Legacy clock and incompatible state/outcome support,Output/final_analysis_v1/*
+Steps 26-28 historical outputs,closed_design_limitations,No change to existing gates or retrospective unblocking,"Final paper limitations, with calibration-specific scope"
+Historical Step 24-25 outputs,retained_historical_expost_projection,PC source shock closes after the phase outcome,Aligned-curve phase branch plus original-window sensitivities
