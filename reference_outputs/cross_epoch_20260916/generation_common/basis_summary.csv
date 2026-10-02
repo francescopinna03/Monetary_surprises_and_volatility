@@ -1,0 +1,2 @@
+mean_mse_degree2,mean_mse_degree1,mean_paired_difference,se_paired_difference,folds_won_by_degree1,n_folds,mean_mse_quadratic_angles_radial1,mean_mse_absolute_angles_radial2,folds_won_by_radial1_quadratic_angles,note
+2.6862780381308813,1.363084243155547,-1.3231937949753332,0.7810579553871329,11,13,1.3097334132877458,2.874942009543038,11,"Equal-weighted annual losses conditional on the existing cross-fitted outcome and indicators. Fold losses share training data; the reported SE is descriptive, not an independent-fold test."

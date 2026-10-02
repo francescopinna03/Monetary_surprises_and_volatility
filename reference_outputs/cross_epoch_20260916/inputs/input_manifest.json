@@ -1,0 +1,55 @@
+{
+  "status": "derived_from_already_opened_results",
+  "generation_events": 111,
+  "historical_events": 160,
+  "bridge_point_estimates_reproduced": {
+    "mp": 0.18190369569553883,
+    "cbi": 0.10856499397182072,
+    "difference": 0.0733387017237181,
+    "mean_all": 0.14523434483367978,
+    "radius": 1.0
+  },
+  "historical_outcomes_reproduced": true,
+  "common_scales": {
+    "schatz_generation_pr_controls_sd": 0.0001736779716457308,
+    "equity_generation_ea_event_sd": 0.004223006433652711,
+    "state_generation_pr_control_mean": -14.914961626637808,
+    "state_generation_pr_control_sd": 1.0678436813556023
+  },
+  "native_historical_schatz_pr_sd": 0.000130310660000777,
+  "generation_slow_state_change": {
+    "mean_abs_outcome_change": 0.018524343674219932,
+    "max_abs_outcome_change": 0.04101464300940627
+  },
+  "source_hashes": {
+    "audit_tmp/run_finish_182722/Econometrics_data/Raw/Certification/final_resume_20260911_174739_4124/status.json": "d7ef6b78ccb6be4283a196da4afe3c55458b25e8147c225b5b595454bf281b85",
+    "audit_tmp/run_finish_182722/Econometrics_data/Raw/Certification/final_resume_20260911_174739_4124/specification.json": "6f4e6364724d553e2bffdaa8480a123a7e1a4e26a80a7b080873c329bc1c9b47",
+    "audit_tmp/run_finish_182722/Econometrics_data/Raw/Certification/final_resume_20260911_174739_4124/windows.csv": "9f2a39ee3b6867eaa9fce979f1976b60b6c49869b27fb2484ef626834acf45de",
+    "audit_tmp/run_finish_182722/Econometrics_data/Raw/Certification/final_resume_20260911_174739_4124/ea_source.csv": "061c29d9d79be1cbfe58e49e61145af536ca39501470471221c917e8ad875bee",
+    "review_20260915_final/estimated/run_manifest.json": "ca874b737bac1edd12d0ecacec10acb70cf13506ef6aeb6f2e863033104934b5",
+    "review_20260915_final/estimated/primary_sample_registry.csv": "cf3968d887979f198bdf69626d2200f5467b1b657310aadd0187bb8e24dc524a",
+    "review_20260915_final/estimated/counterfactual_windows.csv": "f6e3ac1e4e500e521128c5f38393506698fb0d8686dab0a1199fe557391399f3",
+    "review_20260915_final/frozen_manifest/status.json": "f3880de1a82a841373ffee1ac4c7383b56879061e6ea8a9bbdc4c9d6b3f81527",
+    "review_20260915_final/frozen_manifest/specification.json": "219b1335acbf1d7e6db6e2478f5e0a33cbb3feaa5442d146ab54638066ab5546",
+    "audit_tmp/confirmation_bridge_generation_release/bridge_decision.json": "46a88557d974546369a2ee424175cbb1e338f932754d7503bb1c582bb5d05c0b",
+    "audit_tmp/confirmation_bridge_generation_release/bridge_cone_tests.csv": "66248878a980ec5e24c9443ecdfe0033c8af349eb03ca2dfb9c60cebeb835668"
+  },
+  "table_hashes": {
+    "generation_common.csv": "ebea1767b8c53eaedc79067c9a7ad166c68d1539454fc648e48f8c24934d06ea",
+    "generation_harmonized_native_state.csv": "8f3a2860a761ea33aea320c75dda2386b50c0050410dc82c603d4ab6b926d7d2",
+    "generation_native.csv": "12ca2541aec8bcd992b1c5d04c85743a73fe76bb431c6e1dc366e2e32cac2ac4",
+    "historical_native.csv": "f06915f6877f963099643d22dcafff4b27068afb38b92fa6a0798e11268ad724",
+    "historical_common.csv": "a3e0c4c6c622e02c3a8344bba851458d96989ce4e34fbbed0e962627a56fef04"
+  },
+  "raw_prices_read": false,
+  "confirmation_pre_freeze_guard_modified": false,
+  "inference_scope": "conditional on fixed normal outcomes, indicators and common target; after-opening exploratory",
+  "windows": "PR five returns ending +5,+10,+15,+20,+25 minutes; actual support (0,+25]; checked against archived definitions and counts, not re-certified from prices",
+  "limitations": [
+    "2013-2025 source is frozen September 11 generation build, NOT a fresh full pipeline run",
+    "historical source is September 15 after-opening re-estimation",
+    "EA external equity is the same source family in both periods; source window is not made identical to Schatz by scaling",
+    "inherited US release calendar remains candidate-only",
+    "cross-epoch state uses a fixed generation control scale; annual prediction diagnostics retain native leave-year-out state"
+  ]
+}

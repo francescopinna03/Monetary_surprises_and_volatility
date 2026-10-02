@@ -1,0 +1,7 @@
+era,sector,n_original,n_common_support,status,diagnostic_version
+2000_2012,MP,60,24,geometric_overlap_only_not_a_density_test,cross_epoch_v1_20260916
+2000_2012,CBI,78,44,geometric_overlap_only_not_a_density_test,cross_epoch_v1_20260916
+2000_2012,axis,22,0,geometric_overlap_only_not_a_density_test,cross_epoch_v1_20260916
+2013_2025,MP,63,27,geometric_overlap_only_not_a_density_test,cross_epoch_v1_20260916
+2013_2025,CBI,32,10,geometric_overlap_only_not_a_density_test,cross_epoch_v1_20260916
+2013_2025,axis,16,0,geometric_overlap_only_not_a_density_test,cross_epoch_v1_20260916

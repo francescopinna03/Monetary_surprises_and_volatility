@@ -1,0 +1,28 @@
+{
+  "status": "exploratory_protocol_recorded_before_new_cross_epoch_results",
+  "periods": [
+    "2000-2012",
+    "2013-2025"
+  ],
+  "primary_comparison": "Bund PR cross-fitted abnormal log bipower proxy; same EA external equity coordinate and generation PR control Schatz scale",
+  "primary_diagnostic_basis": "quadratic_angles_radial1",
+  "sensitivity_bases": [
+    "degree2_quadratic",
+    "degree1_absolute",
+    "absolute_angles_radial2"
+  ],
+  "nuisance_harmonization": "previous five non-event control days in both eras; generation retains 2022 clock dummy, historical dummy identically zero; separate era control fits; leave-year-out",
+  "state_for_cross_epoch_contrasts": "pre-PR log BV standardized on generation PR Bund controls, fixed across eras; native LOYO state retained for within-era replication",
+  "radius_reference": 1,
+  "angle_reference": "uniform cone angular mean at state zero; model-dependent, not automatically identified across all angles",
+  "common_support_diagnostic": "intersection of convex hulls in abs(u), abs(z), common state across 4 era-sector cells; axis points excluded from sector labels; >=8 retained per cell; no density guarantee",
+  "standardized_sector_contrast": "balanced 4-cell common empirical distribution of abs(u),abs(z),state, evaluate sign-discordant and concordant predictions; infer conditional on empirical target",
+  "decomposition": "symmetric exact Oaxaca decomposition of fitted sector gap difference into observed design composition and fitted coefficient response; full sample and common support; not causal; full support can extrapolate",
+  "inference": "19999 restricted meeting wild draws for two-sided tests; unrestricted wild-t 95% intervals; conditional on normal outcomes, regressors, support and target. Exploratory Holm over all 4 bases times 3 era/era-difference cone tests, and separately same 12 empirical standardized tests. No equivalence margin declared.",
+  "prohibitions": [
+    "no confirmatory relabelling",
+    "no treating non-rejection as equivalence or composition evidence",
+    "no structural MP/CBI causal identification",
+    "no new raw-data read or overwrite of prior results"
+  ]
+}
