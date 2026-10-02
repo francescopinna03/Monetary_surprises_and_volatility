@@ -60,7 +60,7 @@ The stages run in the order below. Each runner writes into a new timestamped dir
 | 14. Measurement-error check | `scripts/Run_measurement_check.sh` | Tables 6 and 7, Figure 3 |
 | 15. Tables and figures | `python3 scripts/Make_paper_tables.py --output tables` | All tables and figures |
 
-Stages 6 to 14 take the facility directory as their first argument and, where relevant, the frozen 2000–2012 build or an earlier run, which they otherwise locate as the most recent one in `Output`. Stage 15 reads the archived outputs in `reference_outputs`. The central figure additionally requires the FOMC event panel, which is passed with `--event-panels` because event-level data are not distributed.
+Stages 6 to 14 take the facility directory as their first argument and, where relevant, the frozen 2000–2012 build or an earlier run, which they otherwise locate as the most recent one in `Output`. The runners of stages 3, 4, 9, 10 and 14 also require two environment variables, `GENERATION_BUILD`, the build produced by stage 2, and `BRIDGE_DIR`, the `bridge` directory produced by stage 3, and they stop if either is missing. After the last stage, `python3 scripts/Compare_with_archive.py --data-root DATA_ROOT --cross-epoch CROSS_EPOCH_OUTPUT` compares every table produced by the replication with the archived one and reports the largest absolute difference. Stage 15 reads the archived outputs in `reference_outputs`. The central figure additionally requires the FOMC event panel, which is passed with `--event-panels` because event-level data are not distributed.
 
 ## Stages of the FOMC replication
 

@@ -47,9 +47,10 @@ export PYTHONUNBUFFERED=1
 export PYTHON_BIN="$python_bin"
 git rev-parse HEAD > "$out/git_commit.txt"
 git status --short > "$out/git_status.txt"
-generation_build="$data_root/Raw/Certification/final_resume_20260911_174739_4124"
+generation_build="${GENERATION_BUILD:?Set GENERATION_BUILD to the frozen 2013-2025 build}"
+[[ -f "$generation_build/status.json" ]] || { echo "Generation build missing: $generation_build" >&2; exit 1; }
 args=()
-[[ -d "$generation_build" ]] && args+=(--generation-build "$generation_build")
+args+=(--generation-build "$generation_build")
 bash scripts/Run_confirmation.sh control-build --quality-dir "$quality_dir" --data-root "$data_root" \
     --output "$out/build" "${args[@]}" "$@"
 bash scripts/Run_confirmation.sh calibrate --build "$out/build" --output "$out/calibration"

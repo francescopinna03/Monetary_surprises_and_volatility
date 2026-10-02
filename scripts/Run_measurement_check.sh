@@ -6,8 +6,10 @@ frozen="${2:?Pass the frozen build directory}"
 python_bin="${PYTHON_BIN:-$run_root/python_env/bin/python}"
 data_root="$run_root/Econometrics_data"
 minute_run="${3:-$(ls -dt "$data_root/Output/"confirmation_minute_*/minute 2>/dev/null | head -1)}"
-generation="$data_root/Raw/Certification/final_resume_20260911_174739_4124"
-bridge="$data_root/Output/confirmation_preparation_20260912_132851_8951/bridge"
+generation="${GENERATION_BUILD:?Set GENERATION_BUILD to the frozen 2013-2025 build}"
+[[ -f "$generation/status.json" ]] || { echo "Generation build missing: $generation" >&2; exit 1; }
+bridge="${BRIDGE_DIR:?Set BRIDGE_DIR to the bridge directory of the preparation run}"
+[[ -f "$bridge/bridge_decision.json" ]] || { echo "Bridge missing: $bridge" >&2; exit 1; }
 [[ -x "$python_bin" ]] || { echo "Python environment missing: $python_bin" >&2; exit 1; }
 [[ -f "$frozen/status.json" ]] || { echo "Frozen build missing: $frozen" >&2; exit 1; }
 [[ -f "$minute_run/minute_measures_panel.csv" ]] || { echo "Minute run missing: $minute_run" >&2; exit 1; }

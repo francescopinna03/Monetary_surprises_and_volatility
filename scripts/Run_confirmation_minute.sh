@@ -6,8 +6,10 @@ frozen="${2:?Pass the frozen build directory}"
 python_bin="${PYTHON_BIN:-$run_root/python_env/bin/python}"
 data_root="$run_root/Econometrics_data"
 minute_dir="${3:-$data_root/Raw/Barchart_futures_1min}"
-generation="$data_root/Raw/Certification/final_resume_20260911_174739_4124"
-bridge="$data_root/Output/confirmation_preparation_20260912_132851_8951/bridge"
+generation="${GENERATION_BUILD:?Set GENERATION_BUILD to the frozen 2013-2025 build}"
+[[ -f "$generation/status.json" ]] || { echo "Generation build missing: $generation" >&2; exit 1; }
+bridge="${BRIDGE_DIR:?Set BRIDGE_DIR to the bridge directory of the preparation run}"
+[[ -f "$bridge/bridge_decision.json" ]] || { echo "Bridge missing: $bridge" >&2; exit 1; }
 [[ -x "$python_bin" ]] || { echo "Python environment missing: $python_bin" >&2; exit 1; }
 [[ -f "$frozen/status.json" ]] || { echo "Frozen build missing: $frozen" >&2; exit 1; }
 [[ -d "$minute_dir" ]] || { echo "Minute directory missing: $minute_dir" >&2; exit 1; }
@@ -43,6 +45,6 @@ export OPENBLAS_NUM_THREADS="${OPENBLAS_NUM_THREADS:-1}" OMP_NUM_THREADS="${OMP_
 git rev-parse HEAD > "$out/git_commit.txt"; git status --short > "$out/git_status.txt"
 args=(--build "$frozen" --minute-dir "$minute_dir" --output "$out/minute"
       --five-minute-dir "$data_root/Raw/Barchart_futures_confirmation" --five-minute-dir "$data_root/Raw/Barchart_futures")
-[[ -f "$generation/status.json" ]] && args+=(--generation-dir "$generation")
-[[ -f "$bridge/bridge_decision.json" ]] && args+=(--bridge-dir "$bridge")
+args+=(--generation-dir "$generation")
+args+=(--bridge-dir "$bridge")
 "$python_bin" -m confirmation_analysis.minute "${args[@]}"

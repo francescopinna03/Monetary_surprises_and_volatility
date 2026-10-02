@@ -4,7 +4,8 @@ repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
 run_root="$(cd "${1:?Pass the existing Monetary_surprises_FULL directory}" && pwd)"
 python_bin="${PYTHON_BIN:-$run_root/python_env/bin/python}"
 data_root="$run_root/Econometrics_data"
-build="$data_root/Raw/Certification/final_resume_20260911_174739_4124"
+build="${GENERATION_BUILD:?Set GENERATION_BUILD to the frozen 2013-2025 build}"
+[[ -f "$build/status.json" ]] || { echo "Generation build missing: $build" >&2; exit 1; }
 [[ -x "$python_bin" ]] || { echo "Python environment missing: $python_bin"; exit 1; }
 [[ -f "$build/status.json" ]] || { echo "Generation build missing: $build"; exit 1; }
 stamp="$(date +%Y%m%d_%H%M%S)_$$"
