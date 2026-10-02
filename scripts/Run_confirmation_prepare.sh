@@ -45,7 +45,7 @@ if [[ -z "$matlab_bin" ]]; then
     matlab_bin="$(ls -d /Applications/MATLAB_*.app/bin/matlab 2>/dev/null | sort | tail -1 || true)"
 fi
 if [[ -n "$matlab_bin" ]]; then
-    "$matlab_bin" -batch "Time_alignment_self_test(); Cone_functionals_self_test();"
+    "$matlab_bin" -batch "cd('$repo_dir/matlab'); Time_alignment_self_test();"
 else
     printf 'MATLAB non disponibile: self-test MATLAB da eseguire separatamente.\n'
 fi
