@@ -1,0 +1,66 @@
+{
+  "schema": "fed_replication_protocol_v1",
+  "purpose": "Out-of-sample replication on FOMC announcements of the amplitude law found on ECB press releases",
+  "sample": {
+    "calendar": "Raw/Certification/fomc_calendar_verified.csv",
+    "events": "decision == include_primary",
+    "period": "2008-12-01 to 2026-03-19",
+    "unscheduled": "kept in the calendar, excluded from estimation because no control day shares their clock"
+  },
+  "data": {
+    "outcome_root": "zn, 10-Year T-Note futures, five-minute bars",
+    "policy_coordinate": "zt, 2-Year T-Note futures: u = minus the log return over (0,25] minutes, scaled by the control standard deviation",
+    "equity_coordinate": "es, E-mini S&P 500 futures: z = log return over (0,25] minutes, scaled by the control standard deviation",
+    "contract": "the file whose non-overlapping front-month window contains the date",
+    "bar_labels": "interval_start, certified by the FOMC calendar market check",
+    "stale_minutes": 5
+  },
+  "outcome": {
+    "primary": "log bipower variation of zn over five returns in (0,25] minutes, relative to a leave-year-out continuation fitted on control days at the same clock",
+    "continuation": "log pre-window bipower over (-60,-5] and its square, slow state (mean log day realized variance over the five previous control days), linear trend, weekday and month indicators",
+    "completeness": "an event or control enters only if every endpoint price of zn, zt and es is available within the staleness cap and the continuation is defined",
+    "controls": "weekdays in the contract windows that are not FOMC dates, anchored at 14:15 and 12:30 ET before 13 March 2013 and at 14:00 ET afterwards"
+  },
+  "primary_family": {
+    "alpha": 0.05,
+    "correction": "Holm over the declared size",
+    "size": 3,
+    "tests": [
+      {
+        "id": "F1",
+        "statement": "coefficient on |u| > 0 in the mean branch with both coordinates and state interactions",
+        "test": "restricted wild cluster bootstrap, one-sided",
+        "draws": 19999
+      },
+      {
+        "id": "F2",
+        "statement": "coefficient on |z| > 0 in the same regression",
+        "test": "restricted wild cluster bootstrap, one-sided",
+        "draws": 19999
+      },
+      {
+        "id": "F3",
+        "statement": "0 < mean elasticity < 1 under the logarithmic radial law with quadratic angles",
+        "test": "intersection-union of the two one-sided CR1 normal tests; the p-value is the larger of the two"
+      }
+    ]
+  },
+  "descriptive": [
+    "radial exponent profile and intervals",
+    "mean elasticity for every measure",
+    "paired leave-year-out errors of degree-one and degree-two bases",
+    "mean branch for BV25, RV, MedRV, MinRV and volume",
+    "split into zero-lower-bound and positive-rate periods",
+    "sector contrast information and meetings needed",
+    "central symmetry odd block"
+  ],
+  "exposure_before_signature": "FOMC release times were checked against the reaction of zt and es at the release bar, and bar counts per window were tallied to assess coverage; no zn post-window price, no outcome and no regression was computed before signature.",
+  "inference": {
+    "minimum_event_clusters": 30,
+    "seed": 20260929,
+    "bootstrap_reps": 999,
+    "sign_flips": 999
+  },
+  "reviewer": "Pinna, F.",
+  "reviewed_on": "2026-09-29"
+}
