@@ -2,7 +2,10 @@ projectRoot = Get_project_root();
 Require_time_alignment_manifest(projectRoot);
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
-panelFile = fullfile(analysisDir, 'pr_bns_component_panel.csv');
+Archive_analysis_outputs(analysisDir, ["quasimarkov_input_gate.csv", ...
+    "quasimarkov_model_specifications.csv", "quasimarkov_crossfit_residuals.csv", ...
+    "quasimarkov_history_tests.csv", "quasimarkov_forecast_rows.csv", ...
+    "quasimarkov_forecast_summary.csv", "quasimarkov_local_whittle.csv"]);
 
 cfg = struct();
 cfg.outcomes = ["asinh_BV_PR", "asinh_PR_rv"];
@@ -19,11 +22,9 @@ cfg.seed = 20260711;
 
 rng(cfg.seed);
 
-if ~isfile(panelFile)
-    error('Input file not found: %s', panelFile);
-end
-
-T = readtable(panelFile, 'TextType', 'string', 'VariableNamingRule', 'preserve');
+[T, panelFile, inputGate] = Quasi_markov_input_gate(projectRoot, cfg.outcomes);
+writetable(inputGate, fullfile(analysisDir, 'quasimarkov_input_gate.csv'));
+cfg.outcomes = inputGate.outcome(inputGate.status == "eligible")';
 
 requiredCore = ["event_date", "root_code", "shock_target_10bp"];
 missingCore = requiredCore(~ismember(requiredCore, string(T.Properties.VariableNames)));

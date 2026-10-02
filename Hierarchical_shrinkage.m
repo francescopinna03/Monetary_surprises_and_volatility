@@ -18,7 +18,6 @@
 %
 % The tuning parameter is selected by event-level grouped cross-validation.
 % Events, rather than individual asset-family observations, define the folds.
-% After selection, the script re-estimates a post-selection OLS model with
 % event-date clustered standard errors on the selected variables.
 %
 % Authors agree this step provides an auxiliary regularization
@@ -65,16 +64,23 @@ if ~ismember("root_gg", string(T.Properties.VariableNames))
     T.root_gg = double(T.root_code == "gg");
 end
 
+T.target_x_preRV_raw = T.shock_target_10bp .* T.state_pre_rv;
+T.target_x_preRSVneg_raw = T.shock_target_10bp .* T.state_pre_rsvneg;
+T.target_x_lag1_raw = T.shock_target_10bp .* T.lag1_target_10bp;
+T.target_x_ma3_raw = T.shock_target_10bp .* T.ma3_target_10bp;
 blocks = cell(8, 1);
 blocks{1} = struct('name', "shock", 'vars', ["shock_target_10bp"]);
 blocks{2} = struct('name', "regime", 'vars', ["regime_hike", "target_x_hike"]);
-blocks{3} = struct('name', "uncert_rv", 'vars', ["state_pre_rv_z", "target_x_preRV"]);
-blocks{4} = struct('name', "uncert_dn", 'vars', ["state_pre_rsvneg_z", "target_x_preRSVneg"]);
-blocks{5} = struct('name', "memory_m1", 'vars', ["M1_e_z", "target_x_M1"]);
-blocks{6} = struct('name', "memory_ma3", 'vars', ["ma3_target_10bp_z", "target_x_memory"]);
+blocks{3} = struct('name', "uncert_rv", 'vars', ["state_pre_rv", "target_x_preRV_raw"]);
+blocks{4} = struct('name', "uncert_dn", 'vars', ["state_pre_rsvneg", "target_x_preRSVneg_raw"]);
+blocks{5} = struct('name', "memory_m1", 'vars', ["lag1_target_10bp", "target_x_lag1_raw"]);
+blocks{6} = struct('name', "memory_ma3", 'vars', ["ma3_target_10bp", "target_x_ma3_raw"]);
 blocks{7} = struct('name', "curve", 'vars', ["T_e", "target_x_T", "P_e", "target_x_P"]);
 blocks{8} = struct('name', "asset", 'vars', ["root_gg"]);
 
+availability = table(need', ismember(need', string(T.Properties.VariableNames)), ...
+    'VariableNames', {'feature','available'});
+writetable(availability, fullfile(analysisDir, 'shrinkage_feature_availability.csv'));
 cvRows = cell(0, 7);
 selRows = cell(0, 5);
 coefRows = {};
@@ -94,8 +100,8 @@ for iy = 1:numel(cfg.outcomes)
 
     lamMax = max(abs((X' * yCtr) / numel(yCtr)));
     lamMax = max(lamMax, 1e-6);
-    lambdaGrid = exp(linspace(log(lamMax), log(lamMax * cfg.lambda_ratio), cfg.nLambda));
-
+    lambdaFractions = exp(linspace(0, log(cfg.lambda_ratio), cfg.nLambda));
+    lambdaGrid = lamMax * lambdaFractions;
     foldMSE = nan(cfg.nFolds, numel(lambdaGrid));
 
     for f = 1:cfg.nFolds
@@ -103,16 +109,18 @@ for iy = 1:numel(cfg.outcomes)
         idxTest = folds == f;
         idxTrain = ~idxTest;
 
-        Xtr = X(idxTrain, :);
-        ytr = yCtr(idxTrain);
-        Xte = X(idxTest, :);
-        yte = yCtr(idxTest);
+        [Xtr, ytr, trainMu, trainSd, trainYMu] = ...
+            standardize_design(Xraw(idxTrain, :), y(idxTrain));
+        Xte = (Xraw(idxTest, :) - trainMu) ./ trainSd;
+        yte = y(idxTest) - trainYMu;
+        trainLamMax = max(max(abs(Xtr' * ytr / numel(ytr))), 1e-6);
+        trainLambdaGrid = trainLamMax * lambdaFractions;
 
         Ltr = normest(Xtr) ^ 2 / max(size(Xtr, 1), 1);
         betaWarm = zeros(size(X, 2), 1);
 
         for il = 1:numel(lambdaGrid)
-            betaWarm = sgl_fista(Xtr, ytr, groupId, lambdaGrid(il), cfg.alpha, cfg.maxIter, cfg.tol, betaWarm, Ltr);
+            betaWarm = sgl_fista(Xtr, ytr, groupId, trainLambdaGrid(il), cfg.alpha, cfg.maxIter, cfg.tol, betaWarm, Ltr);
             yHat = Xte * betaWarm;
             foldMSE(f, il) = mean((yte - yHat) .^ 2, 'omitnan');
         end
@@ -125,7 +133,7 @@ for iy = 1:numel(cfg.outcomes)
 
     [bestMSE, iMin] = min(cvMSE);
     mse1se = bestMSE + cvSE(iMin);
-    iChosen = find(cvMSE <= mse1se, 1, 'last');
+    iChosen = find(cvMSE <= mse1se, 1, 'first');
     lamChosen = lambdaGrid(iChosen);
 
     betaStd = sgl_fista(X, yCtr, groupId, lamChosen, cfg.alpha, cfg.maxIter, cfg.tol);
@@ -158,8 +166,11 @@ selTbl = cell2table(selRows, 'VariableNames', {'depvar', 'feature', 'beta_shrunk
 coefTblAll = vertcat(coefRows{:});
 sumTblAll = vertcat(sumRows{:});
 
+cvTbl.lambda_fraction = repmat(lambdaFractions(:), numel(cfg.outcomes), 1);
+cvTbl.preprocessing = repmat("raw_interactions_then_training_fold_scaling", height(cvTbl), 1);
 writetable(cvTbl, fullfile(analysisDir, 'shrinkage_cv_path.csv'));
 writetable(selTbl, fullfile(analysisDir, 'shrinkage_selected_features.csv'));
+coefTblAll.inference_scope = repmat("descriptive_post_selection", height(coefTblAll), 1);
 writetable(coefTblAll, fullfile(analysisDir, 'shrinkage_postols_coefficients.csv'));
 writetable(sumTblAll, fullfile(analysisDir, 'shrinkage_postols_summary.csv'));
 
