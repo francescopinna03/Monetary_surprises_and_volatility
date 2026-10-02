@@ -13,10 +13,13 @@ import traceback
 import zipfile
 import numpy as np
 import pandas as pd
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
 from confirmation_analysis.functional_form import functional_form, DIAGNOSTIC_VERSION
 from confirmation_analysis.protocol import digest, timestamp
 
-REPO = Path(__file__).resolve().parent
+REPO = Path(__file__).resolve().parents[1]
 REVIEWED_BUILD = 'f3880de1a82a841373ffee1ac4c7383b56879061e6ea8a9bbdc4c9d6b3f81527'
 
 
@@ -93,7 +96,7 @@ def main(argv=None):
     out = facility/'runs'/('functional_form_corrected_'+datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S_%f')+f'_{os.getpid()}')
     out.mkdir(parents=True, exist_ok=False)
     paths = ['confirmation_analysis/functional_form.py', 'confirmation_analysis/inference.py',
-             'confirmation_analysis/cones.py', 'final_analysis/models.py', 'Run_functional_form_checks.py',
+             'confirmation_analysis/cones.py', 'final_analysis/models.py', 'scripts/Run_functional_form_checks.py',
              'tests/test_functional_form.py']
     manifest = dict(status='running', mode='functional_form_only_after_opening', diagnostic_version=DIAGNOSTIC_VERSION,
         source_results=str(source), source_run=old_manifest, input_hashes=inputs, created_utc=timestamp(),

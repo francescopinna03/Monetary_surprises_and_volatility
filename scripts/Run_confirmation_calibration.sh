@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-repo_dir="$(cd "$(dirname "$0")" && pwd)"
+repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
 run_root="$(cd "${1:?Pass the existing Monetary_surprises_FULL directory}" && pwd)"
 shift
 quality_dir="${1:?Pass the confirmation_quality_*/quality directory}"
@@ -50,9 +50,9 @@ git status --short > "$out/git_status.txt"
 generation_build="$data_root/Raw/Certification/final_resume_20260911_174739_4124"
 args=()
 [[ -d "$generation_build" ]] && args+=(--generation-build "$generation_build")
-bash Run_confirmation.sh control-build --quality-dir "$quality_dir" --data-root "$data_root" \
+bash scripts/Run_confirmation.sh control-build --quality-dir "$quality_dir" --data-root "$data_root" \
     --output "$out/build" "${args[@]}" "$@"
-bash Run_confirmation.sh calibrate --build "$out/build" --output "$out/calibration"
-bash Run_confirmation.sh readiness --quality-dir "$quality_dir" --build-dir "$out/build" \
+bash scripts/Run_confirmation.sh calibrate --build "$out/build" --output "$out/calibration"
+bash scripts/Run_confirmation.sh readiness --quality-dir "$quality_dir" --build-dir "$out/build" \
     --calibration-dir "$out/calibration" --output "$out/readiness" || true
 printf '\nCostruzione protetta e calibrazione completate. Nessun outcome di conferma calcolato.\n'

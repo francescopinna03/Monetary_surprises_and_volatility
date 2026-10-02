@@ -11,10 +11,13 @@ import zipfile
 import numpy as np
 import pandas as pd
 import scipy
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parents[1]))
 from confirmation_analysis.functional_form import functional_form, BASES, design_with_state, basis_comparison
 from confirmation_analysis.cross_epoch import cross_epoch, cone_contrast, contrast_result, holm_fixed
 
-REPO=Path(__file__).resolve().parent
+REPO=Path(__file__).resolve().parents[1]
 
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
@@ -37,7 +40,7 @@ def run(inputs,out,draws=19999):
     (out/'inputs').mkdir()
     for p in inputs.iterdir():
         if p.suffix in ['.csv','.json']:shutil.copy2(p,out/'inputs'/p.name)
-    code=['Run_cross_epoch_checks.py','Prepare_cross_epoch_inputs.py','confirmation_analysis/cross_epoch.py','confirmation_analysis/functional_form.py','confirmation_analysis/inference.py','confirmation_analysis/cones.py','confirmation_analysis/nuisance.py','final_analysis/models.py']
+    code=['scripts/Run_cross_epoch_checks.py','scripts/Prepare_cross_epoch_inputs.py','confirmation_analysis/cross_epoch.py','confirmation_analysis/functional_form.py','confirmation_analysis/inference.py','confirmation_analysis/cones.py','confirmation_analysis/nuisance.py','final_analysis/models.py']
     for name in code:
         dest=out/'executed_code'/name;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(REPO/name,dest)
     manifest={'status':'running','created_utc':datetime.now(timezone.utc).isoformat(),'draws':draws,'seed':20260916,'profile':'full' if draws==19999 else 'smoke_only','inference_scope':'exploratory after opening; conditional on precomputed outcomes, regressors, support and targets','raw_prices_read':False,'code_sha256':{n:sha(REPO/n) for n in code},'input_manifest_sha256':sha(inputs/'input_manifest.json'),'analysis_protocol_sha256':sha(protocol),'python':sys.version,'numpy':np.__version__,'pandas':pd.__version__,'scipy':scipy.__version__,'platform':platform.platform(),'source_limitations':m['limitations']}

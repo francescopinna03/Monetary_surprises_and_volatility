@@ -66,7 +66,7 @@ def main():
             for path in sorted(out.rglob('*')):
                 if path.is_file(): z.write(path, str(path.relative_to(out)))
             code_files = list((REPO/'confirmation_analysis').glob('*.py'))
-            code_files += [REPO/'Raw/Certification/final_analysis_spec_v2.json', REPO/'Run_confirmation_quality.sh']
+            code_files += [REPO/'Raw/Certification/final_analysis_spec_v2.json', REPO/'scripts'/'Run_confirmation_quality.sh']
             for path in sorted(code_files):
                 z.write(path, 'executed_code/'+str(path.relative_to(REPO)))
         print('ZIP da caricare:', archive, flush=True)

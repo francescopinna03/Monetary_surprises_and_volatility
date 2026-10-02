@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-repo_dir="$(cd "$(dirname "$0")" && pwd)"
+repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
 run_root="$(cd "${1:?Pass the facility directory}" && pwd)"
 python_bin="${PYTHON_BIN:-$run_root/python_env/bin/python}"
 data_root="$run_root/Econometrics_data"

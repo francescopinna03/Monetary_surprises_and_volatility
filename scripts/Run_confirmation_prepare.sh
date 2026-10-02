@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-repo_dir="$(cd "$(dirname "$0")" && pwd)"
+repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
 run_root="$(cd "${1:?Pass the existing Monetary_surprises_FULL directory}" && pwd)"
 python_bin="${PYTHON_BIN:-$run_root/python_env/bin/python}"
 data_root="$run_root/Econometrics_data"
@@ -48,9 +48,9 @@ if [[ -n "$matlab_bin" ]]; then
 else
     printf 'MATLAB non disponibile: self-test MATLAB da eseguire separatamente.\n'
 fi
-bash Run_confirmation.sh audit --data-root "$data_root" "${args[@]}" \
+bash scripts/Run_confirmation.sh audit --data-root "$data_root" "${args[@]}" \
     --output "$CONFIRMATION_PREPARATION_OUTPUT/audit"
-bash Run_confirmation.sh bridge --generation-build "$build" \
+bash scripts/Run_confirmation.sh bridge --generation-build "$build" \
     --output "$CONFIRMATION_PREPARATION_OUTPUT/bridge"
-bash Run_confirmation.sh check-protocol > "$CONFIRMATION_PREPARATION_OUTPUT/protocol_readiness.json"
+bash scripts/Run_confirmation.sh check-protocol > "$CONFIRMATION_PREPARATION_OUTPUT/protocol_readiness.json"
 printf '\nPreparazione completata. Campione di conferma non stimato; specifica v2 ancora in bozza.\n'

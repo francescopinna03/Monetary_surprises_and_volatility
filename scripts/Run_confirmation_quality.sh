@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-repo_dir="$(cd "$(dirname "$0")" && pwd)"
+repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
 run_root="${1:?Pass the existing Monetary_surprises_FULL directory}"
 shift
 python_bin="${PYTHON_BIN:-$run_root/python_env/bin/python}"

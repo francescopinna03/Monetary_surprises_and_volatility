@@ -3,6 +3,9 @@ import numpy as np
 import pandas as pd
 from confirmation_analysis.cross_epoch import (holm_fixed,symmetric_decomposition,cone_contrast,common_support,target_contrast,wild_t_interval)
 from confirmation_analysis.functional_form import degree2_basis,quadratic_angles_radial1,degree1_basis
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"scripts"))
 from Prepare_cross_epoch_inputs import control_slow
 
 class CrossEpochTests(unittest.TestCase):

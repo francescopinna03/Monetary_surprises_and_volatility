@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-repo_dir="$(cd "$(dirname "$0")" && pwd)"
+repo_dir="$(cd "$(dirname "$0")/.." && pwd)"
 run_root="$(cd "${1:?Pass the existing Monetary_surprises_FULL directory}" && pwd)"
 quality_dir="${2:?Pass the confirmation_quality_*/quality directory}"
 build_dir="${3:?Pass the confirmation_calibration_*/build directory}"
@@ -61,8 +61,8 @@ git rev-parse HEAD > "$out/git_commit.txt"
 git status --short > "$out/git_status.txt"
 opened_args=()
 [[ -n "$already_opened" ]] && opened_args+=(--already-opened "$already_opened")
-bash Run_confirmation.sh freeze --quality-dir "$quality_dir" --data-root "$data_root" \
+bash scripts/Run_confirmation.sh freeze --quality-dir "$quality_dir" --data-root "$data_root" \
     --build "$build_dir" --calibration "$calibration_dir" --bridge-dir "$bridge_dir" \
     --destination "$frozen" "${opened_args[@]}"
-bash Run_confirmation.sh estimate --build "$frozen" --output "$out/estimated"
+bash scripts/Run_confirmation.sh estimate --build "$frozen" --output "$out/estimated"
 printf '\nStima v2 completata. Build congelata: %s\n' "$frozen"
