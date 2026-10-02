@@ -30,6 +30,9 @@ Time_alignment_self_test();
 fprintf('\n[preflight] Surprise_source_self_test\n');
 Surprise_source_self_test();
 
+fprintf('\n[preflight] Quasi_markov_input_self_test\n');
+Quasi_markov_input_self_test();
+
 fprintf('\n[ 1/27] Audit_Barchart\n');
 Audit_Barchart;
 
@@ -45,6 +48,8 @@ Event_panel_construction;
 fprintf('\n[audit] Event_time_alignment_audit\n');
 Event_time_alignment_audit;
 
+Window_semantics_self_test;
+Window_semantics_certification;
 fprintf('\n[ 5/27] Event_windows\n');
 Event_windows;
 
