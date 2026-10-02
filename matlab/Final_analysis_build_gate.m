@@ -6,7 +6,7 @@ function manifest = Final_analysis_build_gate(projectRoot, buildDir)
     assert(isequal(string(H.Properties.VariableNames), ["relative_path", "sha256"]), 'FINAL_INPUT_HASH_SCHEMA_MISMATCH');
     for i = 1:height(H)
         if H.relative_path(i) == "specification"
-            source = fullfile(fileparts(mfilename('fullpath')), 'Raw', 'Certification', 'final_analysis_spec_v1.json');
+            source = fullfile(fileparts(fileparts(mfilename('fullpath'))), 'Raw', 'Certification', 'final_analysis_spec_v1.json');
         else
             source = fullfile(projectRoot, H.relative_path(i));
         end
