@@ -1,0 +1,40 @@
+key,value,notes
+schema_version,step28_sbb_specification_v3,Frozen contract identifier; do not edit.
+factor_rank_rule,selected_by_spectral_gate,"The current passing spectral gate supplies r in {1,2}; r = 3 remains terminal."
+kappa_grid,1.05|1.1|1.25|1.5|2|3|4|6|10,"Full preregistered path; values near one and in the far tail remain diagnostic."
+kappa_robust_grid,1.25|1.5|2|3|4,"Contiguous interior range on which every substantive conclusion must hold uniformly."
+bootstrap_draws,999,Meeting bootstrap draws with full upstream re-estimation.
+bootstrap_seed,7301,Fixed seed used by every stochastic Step-28 module.
+alpha,0.05,Simultaneous band level.
+leave_top_k,1|3|5,Pipe-separated shock-energy exclusions.
+boundary_bar_perturbations,drop_first_post|drop_last_post|shift_forward_one_bar|shift_backward_one_bar,"All four supported boundary-bar perturbations are binding."
+whitening_minimum_dates,20,Minimum control dates per fold and intraday position for equation (29).
+history_lag,1,"One five-minute lag; preserves three usable PR transitions per complete meeting."
+state_columns,regime_hike|state_pre_rv_z|state_pre_rsvneg_z|ma3_target_10bp_z,"Parsimonious preregistered state block carried forward from the earlier state analysis."
+surprise_columns,target_pca_10bp_z|path_pca_10bp_z,"Standardised EA-EMPD target and path components."
+control_conditioning_rule,state_and_surprise_zeroed,"Matched controls carry neither an announcement state nor an announcement surprise."
+law_fit_sample,pooled,"Required to identify event-state and surprise slopes when those blocks are zero on controls; penalty tuning remains control-only and nested."
+law_pooling,group_intercept_pooled_slopes,"Phase-position intercepts with pooled slopes."
+law_correlation_scope,pooled,"One regularised residual correlation matrix."
+law_penalty_grid,0|0.05|0.1|0.2|0.35|0.5|0.75|1,Control-tuned shrinkage grid.
+law_minimum_group_rows,20,Minimum observations in every phase-position law cell.
+law_residual_floor,1e-8,Positive numerical floor used in the log-scale regression.
+calibration_meeting_grid,20|30|40|50|60|70|80|90|100|110|120,"Outcome-free grid extending beyond the 102-event inventory upper bound so the right-tail envelope is binding."
+calibration_frontier_eigengap,1.2,"Smallest admissible eigengap in whitened level units."
+calibration_projector_tolerance,0.35,"Maximum 0.95 projector-distance quantile; about a 20.5 degree one-angle deviation."
+calibration_true_rank,1|2,"Both admissible low ranks are calibrated."
+calibration_positions,5,Five whitened PR levels corresponding to four adjacent transitions.
+calibration_replications,200,Synthetic panels per grid point.
+spectral_parallel_draws,199,Parallel-analysis permutations.
+spectral_parallel_quantile,0.95,Parallel-analysis and angle-null quantile.
+spectral_reconstruction_folds,5,Folds for held-out reconstruction.
+spectral_stability_draws,199,Meeting-bootstrap draws for projector stability.
+spectral_angle_draws,199,Null draws for PR-PC principal angles.
+markov_r2_grid,0.01|0.02|0.05|0.1|0.2|0.3|0.5,"Preregistered detectable partial-R2 grid with finer resolution near zero."
+markov_draws,999,Wild-sign draws for the score test.
+markov_power_draws,499,Draws per point of the power curve.
+markov_benchmark_draws,999,Meeting-bootstrap draws for the state lower bound.
+gaussian_mean_tolerance,3,"Maximum clustered absolute t statistic for the standardised mean."
+gaussian_covariance_tolerance,0.25,"Maximum dimension-normalised Frobenius covariance gap."
+gaussian_coverage_levels,0.5|0.8|0.9|0.95,Nominal out-of-fold coverage levels.
+gaussian_coverage_tolerance,0.08,Maximum absolute coverage error at any preregistered level.
