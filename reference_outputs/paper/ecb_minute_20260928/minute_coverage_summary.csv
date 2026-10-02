@@ -1,0 +1,9 @@
+sample,is_event,coverage_status,n
+G_2013_2025,False,complete,3263
+G_2013_2025,False,empty,5
+G_2013_2025,False,stale_or_partial,12
+G_2013_2025,True,complete,114
+H_2000_2012,False,complete,3090
+H_2000_2012,False,empty,18
+H_2000_2012,False,stale_or_partial,3
+H_2000_2012,True,complete,181

@@ -1,0 +1,3 @@
+family,root_code,phase,outcome,indicator,equity,sample,trimming,hypothesis,status,estimate,se_cr1,t_stat,p_wild,alternative,draws,n_clusters,n_rows,p_holm,alpha,rejected_at_alpha
+primary_reestimated_after_opening,gg,PR,crossfit_abnormal_log_BV,u_primary,z_primary,confirmation_2000_2012,none,H1_MP_cone_mean,estimated,0.09795657252688772,0.04943558072537947,1.9814993793852271,0.10335,greater,19999,160,160,0.2067,0.05,False
+primary_reestimated_after_opening,gg,PR,crossfit_abnormal_log_BV,u_primary,z_primary,confirmation_2000_2012,none,H2_MP_minus_CBI,estimated,-0.06748324601084184,0.04138709766488758,-1.6305382551164969,0.9382,greater,19999,160,160,0.9382,0.05,False

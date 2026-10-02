@@ -1,0 +1,7 @@
+measure,n_events,partial_r2_odd_block,p_wild_joint_odd_block,odd_terms,draws
+BV,131,0.03253810952603575,0.54835,u|z|u_x_state|z_x_state,19999
+BV25,126,0.024125162021634172,0.51285,u|z|u_x_state|z_x_state,19999
+RV,133,0.06406354994136798,0.1166,u|z|u_x_state|z_x_state,19999
+MedRV,133,0.028884322242981764,0.61995,u|z|u_x_state|z_x_state,19999
+MinRV,131,0.03598515332828989,0.4117,u|z|u_x_state|z_x_state,19999
+VOL,137,0.07579440775102941,0.09845,u|z|u_x_state|z_x_state,19999

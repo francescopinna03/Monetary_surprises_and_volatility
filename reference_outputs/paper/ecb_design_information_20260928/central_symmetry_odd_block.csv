@@ -1,0 +1,9 @@
+sample,measure,n_events,partial_r2_odd_block,p_wild_joint_odd_block,odd_terms,draws
+H_2000_2012,BV5_frozen,160,0.022813113246217487,0.5901,u|z|u_x_state|z_x_state,19999
+H_2000_2012,BV,170,0.030834279933092956,0.1901,u|z|u_x_state|z_x_state,19999
+H_2000_2012,BV_excl5,170,0.04052081606543323,0.14445,u|z|u_x_state|z_x_state,19999
+H_2000_2012,VOL,170,0.04950190165632906,0.0961,u|z|u_x_state|z_x_state,19999
+G_2013_2025,BV5_frozen,111,0.030409706609476728,0.57985,u|z|u_x_state|z_x_state,19999
+G_2013_2025,BV,111,0.04277241366501938,0.3635,u|z|u_x_state|z_x_state,19999
+G_2013_2025,BV_excl5,111,0.03568722591406581,0.5059,u|z|u_x_state|z_x_state,19999
+G_2013_2025,VOL,111,0.10147132867562525,0.01105,u|z|u_x_state|z_x_state,19999
