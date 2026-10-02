@@ -38,8 +38,6 @@ frozen = Path(os.environ['CONFIRMATION_FROZEN'])
 with ZipFile(os.environ['CONFIRMATION_ZIP'], 'w', ZIP_DEFLATED) as z:
     for p in sorted(root.rglob('*')):
         if p.is_file(): z.write(p, str(p.relative_to(root)))
-    for name in ['status.json', 'specification.json', 'decisions.json']:
-        if (frozen/name).is_file(): z.write(frozen/name, 'frozen_manifest/'+name)
     code = list((repo/'confirmation_analysis').glob('*.py'))
     code += [repo/'Raw/Certification/final_analysis_spec_v2.json']
     for p in sorted(code):
@@ -65,4 +63,8 @@ bash scripts/Run_confirmation.sh freeze --quality-dir "$quality_dir" --data-root
     --build "$build_dir" --calibration "$calibration_dir" --bridge-dir "$bridge_dir" \
     --destination "$frozen" ${opened_args[@]+"${opened_args[@]}"}
 bash scripts/Run_confirmation.sh estimate --build "$frozen" --output "$out/estimated"
+mkdir -p "$out/frozen_manifest"
+for name in status.json specification.json decisions.json; do
+    if [[ -f "$frozen/$name" ]]; then cp "$frozen/$name" "$out/frozen_manifest/$name"; fi
+done
 printf '\nStima v2 completata. Build congelata: %s\n' "$frozen"
