@@ -1,6 +1,38 @@
 # Monetary Surprises and Volatility
 
-> **Current certified status — 31 July 2026.** The public replication now
+> **Current analysis, 16 September 2026.** The latest result is an exploratory
+> comparison of 160 Bund press-release meetings in 2000–2012 with 111 meetings
+> in 2013–2025. Code, fixed derived inputs and reference outputs are included.
+> See [reproduction instructions](docs/REPRODUCTION_20260916.md) and
+> [results and limitations](docs/Cross_epoch_findings_20260916.md).
+> These analyses follow data opening. They are not a new confirmation and
+> do not constitute a new raw-data run of the historical 28-step pipeline.
+> No manuscript is included in this update.
+
+The update includes corrected post-opening sensitivities, the radial/angular
+functional-form comparison and the common-metric, common-support comparison
+between periods. The source code is matched to the archived final run by
+SHA-256. Reference outputs preserve their original manifests.
+
+The main finding is a conditional association with surprise magnitude in
+both periods. Linear radial specifications predict held-out years better
+than the corresponding quadratic specifications. Sector rankings depend
+on angular form and the comparison target. Composition contributes to the
+fitted gap change, without establishing equal response surfaces or a causal
+MP/CBI attribution. The tests and comparisons remain exploratory.
+
+For the earlier corrected final-analysis layer, see
+[FINAL_ANALYSIS_PROTOCOL.md](FINAL_ANALYSIS_PROTOCOL.md). April `paper_tables`
+are superseded for canonical-window claims. The dynamic extensions retain
+their feasibility gates; the new event-level comparison does not override them.
+
+## Historical pipeline documentation
+
+The material below records the earlier research sequence and its dated
+results. It is retained for provenance and is not the status of the latest
+cross-period analysis. Use the reproduction guide above for the current result.
+
+> **Archived certified status — 31 July 2026.** The public replication now
 > consists of a single 27-step MATLAB pipeline. Steps 1–27 have been reviewed
 > and executed under the certified `timezone_v1` and `window_semantics_v1`
 > conventions: Barchart timestamps are localized as America/Chicago wall
