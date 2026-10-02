@@ -1,0 +1,72 @@
+{
+  "retrieved_utc": "2026-09-13",
+  "source_type": "official_Eurex_calendar_archive",
+  "documents": {
+    "2011": {
+      "url": "https://www.eurex.com/resource/blob/283130/b4c195865615cd3f92287e355a06efe4/data/tradingcalendar_2011_en.pdf",
+      "sha256": "02b4a2b6a2f637af93d8bdf4404d0133700aea41cd4abbdf6723c3ee7f637b47",
+      "regular_hours_table_found": true
+    },
+    "2010": {
+      "url": "https://www.eurex.com/resource/blob/283586/33c134880195fb97a89781f573e00c30/data/tradingcalendar_2010_en.pdf",
+      "sha256": "72bd924940be12abdd6fb9e8da78ae872ace16198d0f9fdc4ff21ced7b1e6f4d",
+      "regular_hours_table_found": true
+    },
+    "2009": {
+      "url": "https://www.eurex.com/resource/blob/283160/b3e968f9036095c2b7b9db256ca6e301/data/tradingcalendar_2009_en.pdf",
+      "sha256": "af98424e9851d2120368a16f184ac4c9c53d22147a05cc1c37b1b7fd12b35837",
+      "regular_hours_table_found": true
+    },
+    "2008": {
+      "url": "https://www.eurex.com/resource/blob/244848/d0384bde08e48cc32160305d302b62ae/data/tradingcalendar_2008_en.pdf",
+      "sha256": "ec12e5a7f79d914bc57b2f701a3b0a32870d3303897e4b04a263ab7408c0e59b",
+      "regular_hours_table_found": true
+    },
+    "2007": {
+      "url": "https://www.eurex.com/resource/blob/283210/79e69e0ba644c79a4f4fb71fd32ff9ce/data/tradingcalendar_2007_en.pdf",
+      "sha256": "a9177aa4c58408efc9618ff285253f01ed05570dd2c4b48bb08017ce6d25fbb9",
+      "regular_hours_table_found": true
+    },
+    "2006": {
+      "url": "https://www.eurex.com/resource/blob/282950/6c59603a83792975297d2b04932e058d/data/tradingcalendar_2006_en.pdf",
+      "sha256": "63d5606e335e9693420224511e30f137001d5e0ff7824691a56cb29365d841c3",
+      "regular_hours_table_found": true
+    },
+    "2005": {
+      "url": "https://www.eurex.com/resource/blob/289186/5a9b0242e7860d06ca1630503f5b3fed/data/tradingcalendar_2005_en.pdf",
+      "sha256": "8afc3c1295bab5fa07a53fa1bc4c512eb70fa2b924078429ecbfbb1934e35c8d",
+      "regular_hours_table_found": true
+    },
+    "2004": {
+      "url": "https://www.eurex.com/resource/blob/289174/6212a05ff8da16f3b00051ae8a185034/data/tradingcalendar_2004_en.pdf",
+      "sha256": "085186ffbbc26b814885e27b405464321ae8d8fac41626de7190cbb58c0a874a",
+      "regular_hours_table_found": true
+    },
+    "2003": {
+      "url": "https://www.eurex.com/resource/blob/289204/920dcd3d38fc54690e80c6aee996b881/data/tradingcalendar_2003_en.pdf",
+      "sha256": "e329019a2e7621331f955c3331883934cdf85a5c4aaa3c6d36627331e1fdec31",
+      "regular_hours_table_found": false
+    },
+    "2002": {
+      "url": "https://www.eurex.com/resource/blob/289200/b9ba47bfb6fb75d657f0ec1e2d491b26/data/tradingcalendar_2002_en.pdf",
+      "sha256": "87535e0a4eab0a41c27ff788f00dafd92d31f3cdfa1a06392c2efdad3ef06c29",
+      "regular_hours_table_found": false
+    },
+    "2001": {
+      "url": "https://www.eurex.com/resource/blob/289264/be34fea5a39c21de02471feccf898662/data/tradingcalendar_2001_en.pdf",
+      "sha256": "215e716744c556836fc9eab95624219925e1dd7cee42c37521562680a86ef89e",
+      "regular_hours_table_found": false
+    },
+    "2000": {
+      "url": "https://www.eurex.com/resource/blob/289252/e667a61086fff75980e01a01b367eda5/data/tradingcalendar_2000_en.pdf",
+      "sha256": "8bd6dbc4d8ee715e21bbcde14344214d969166b0399ad9c32721c9d8560d38e0",
+      "regular_hours_table_found": true
+    },
+    "2012": {
+      "url": "https://www.eurex.com/resource/blob/284994/e988f1cef4437150c0a74a5a8f285d64/data/tradingcalendar_2012_en.pdf",
+      "sha256": "3045def26f7af8ab5228b5714fb3d75043d14287c2ea8e476c43f3b0ac8d5739",
+      "regular_hours_table_found": true
+    }
+  },
+  "notes": "2001-2003 archived downloads have one calendar page and no hours table. Schedule leaves these dates uncovered, not inferred. Sources cover at least one year in every three-year label-evidence cell."
+}
