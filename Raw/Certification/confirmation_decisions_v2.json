@@ -1,0 +1,54 @@
+{
+  "equity_source_rule": {
+    "admissible": [
+      "homogeneous_external_stoxx50e_2000_2012",
+      "hybrid_fx_futures_when_available_else_stoxx50e"
+    ],
+    "choice": "homogeneous_external_stoxx50e_2000_2012",
+    "context": "fx futures exist from June 2011 only. STOXX50E from EA-EMPD passed bridge checks 1-2 and failed checks 3-4 on generation data.",
+    "decided_on": "2026-09-14",
+    "rationale": "Euro Stoxx futures exist only from June 2011, so an aligned equity coordinate is unavailable for most of the confirmation sample. The bridge passed checks 1-2 and failed 3-4, so fx and STOXX50E are not interchangeable; a single homogeneous external coordinate across 2000-2012 keeps the estimand constant within the confirmation sample rather than switching source mid-sample.",
+    "reviewer": "Pinna, F."
+  },
+  "pc_normal_pre_support": {
+    "admissible": [
+      "v1_grid_endpoints_minus25_to_minus5_support_minus30_to_minus5"
+    ],
+    "choice": "v1_grid_endpoints_minus25_to_minus5_support_minus30_to_minus5",
+    "context": "The v1 generation build and the bridge use PC pre endpoints -25..-5, i.e. support (-30,-5]. The plan prose said (-25,-5].",
+    "decided_on": "2026-09-14",
+    "rationale": "The v1 generation build and the bridge were computed on the -25..-5 endpoint grid. Keeping it makes the confirmation pre-PC support identical to the one the bridge validated; the plan prose said (-25,-5] but no result rests on that reading.",
+    "reviewer": "Pinna, F."
+  },
+  "secondary_family_rule": {
+    "admissible": [
+      "spec_secondary_family_verbatim_single_joint_history_block"
+    ],
+    "choice": "spec_secondary_family_verbatim_single_joint_history_block",
+    "context": "The finite secondary list lives in the specification; the sufficiency interval is one joint history block, reported as an interval and not as a claim.",
+    "decided_on": "2026-09-14",
+    "rationale": "The secondary tests are fixed in the specification before the freeze and the finite-history block enters as one joint test, reported as an interval with its calibrated floor. This prevents the sufficiency question from being restated as a claim after seeing the estimate.",
+    "reviewer": "Pinna, F."
+  },
+  "slow_state_rule": {
+    "admissible": [
+      "event_day_excluded_previous_five_control_days"
+    ],
+    "choice": "event_day_excluded_previous_five_control_days",
+    "context": "v1 slow5 averaged full-day RV of the five previous selected contract-days, including event days and hence their post-announcement outcomes.",
+    "decided_on": "2026-09-14",
+    "rationale": "The v1 slow5 averages full-day RV over the five previous selected contract-days including meeting days, so on the confirmation sample it would read event post-announcement outcomes before the freeze. Event days are therefore excluded; the difference between the two rules is measured on generation data only.",
+    "reviewer": "Pinna, F."
+  },
+  "us_calendar_status": {
+    "admissible": [
+      "candidate_screen_only",
+      "verified_calendar_provided"
+    ],
+    "choice": "candidate_screen_only",
+    "context": "A Thursday 08:30 New York candidate screen is not a verified release calendar.",
+    "decided_on": "2026-09-14",
+    "rationale": "No verified BLS/DoL release calendar has been assembled, so a Thursday 08:30 New York screen identifies candidates only. Weekday matching in the counterfactual absorbs the average exposure; the US sensitivity is reported as a candidate screen and not as a verified exclusion.",
+    "reviewer": "Pinna, F."
+  }
+}
