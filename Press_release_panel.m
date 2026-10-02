@@ -78,7 +78,10 @@ if ~islogical(P.PR_window_eligible)
     P.PR_window_eligible = String_to_boolean(P.PR_window_eligible);
 end
 
-PR = P(P.PR_window_eligible, :);
+assert(ismember("window_protocol", string(P.Properties.VariableNames)) && ...
+    all(P.window_protocol == "final_analysis_v1"), ...
+    'FINAL_WINDOWS_STALE: rebuild Event_windows before estimating.');
+PR = P(P.PR_window_eligible & ismember(P.root_code, ["fx", "gg"]), :);
 
 if isempty(PR)
     error('Nessuna finestra PR eleggibile trovata nel pannello.');

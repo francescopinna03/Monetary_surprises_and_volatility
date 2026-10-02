@@ -30,6 +30,7 @@ projectRoot = Get_project_root();
 timeCfg = Time_alignment_config();
 
 rawDir = fullfile(projectRoot, 'Raw', 'Barchart_futures');
+Require_generation_archive(rawDir);
 manifestDir = fullfile(projectRoot, 'Output', 'manifests');
 diagDir = fullfile(projectRoot, 'Output', 'diagnostics');
 

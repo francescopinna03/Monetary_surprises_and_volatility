@@ -511,24 +511,7 @@ end
 
 function [r, coverage] = returns_on_grid(C, endpoints, barMinutes)
 
-    endpoints = endpoints(:);
-    previousEndpoints = endpoints - minutes(barMinutes);
-
-    [hasCurrent, currentLoc] = ismember(endpoints, C.bar_time);
-    [hasPrevious, previousLoc] = ismember(previousEndpoints, C.bar_time);
-    valid = hasCurrent & hasPrevious;
-
-    r = nan(numel(endpoints), 1);
-
-    if any(valid)
-        currentPrice = C.price(currentLoc(valid));
-        previousPrice = C.price(previousLoc(valid));
-        goodPrice = isfinite(currentPrice) & isfinite(previousPrice) & currentPrice > 0 & previousPrice > 0;
-        validIndex = find(valid);
-        validIndex = validIndex(goodPrice);
-        r(validIndex) = log(currentPrice(goodPrice)) - log(previousPrice(goodPrice));
-    end
-
+    r = Canonical_returns_on_grid(C.bar_time, C.price, C.volume, endpoints, barMinutes);
     coverage = mean(isfinite(r));
 end
 
@@ -1192,7 +1175,7 @@ function T = format_dates_for_write(T)
 
     for v = vars
         if isdatetime(T.(v))
-            if contains(lower(v), "datetime") || contains(lower(v), "time")
+            if contains(lower(v), "datetime") || contains(lower(v), "time") || contains(lower(v), "anchor")
                 T.(v) = string(T.(v), 'yyyy-MM-dd HH:mm:ss');
             else
                 T.(v) = string(T.(v), 'yyyy-MM-dd');

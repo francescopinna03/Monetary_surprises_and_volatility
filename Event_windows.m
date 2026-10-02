@@ -4,7 +4,6 @@
 % preferred futures contracts selected in the previous step and extracts
 % intraday windows around each ECB monetary policy event.
 %
-% For each eligible event-contract pair, the script constructs three windows.
 % The PR window is centered around the press release, the PC one
 % around the press conference, and the ANN window spans the broader announcement
 % interval from before the press release to after the press conference.
@@ -31,29 +30,37 @@ clear; clc;
 
 projectRoot = Get_project_root();
 Require_time_alignment_manifest(projectRoot);
+semantics = Require_window_semantics_manifest(projectRoot);
+finalCfg = Final_window_config();
 
 cleanDir = fullfile(projectRoot, 'Output', 'cleaned');
 diagDir = fullfile(projectRoot, 'Output', 'diagnostics');
 windowDir = fullfile(projectRoot, 'Output', 'event_windows');
 prefFile = fullfile(diagDir, 'preferred_contract_by_event.csv');
+finalBuild = string(getenv('FINAL_ANALYSIS_BUILD'));
+if strlength(finalBuild) > 0
+    Final_analysis_build_gate(projectRoot, finalBuild);
+    prefFile = fullfile(finalBuild, 'preferred_contracts.csv');
+end
 
 if ~exist(windowDir, 'dir'); mkdir(windowDir); end
 
 params = struct();
 params.bar_minutes = 5;
 params.low_volume_threshold = 1;
-params.pr_pre_minutes = 15;
-params.pr_post_minutes = 30;
-params.pc_pre_minutes = 15;
-params.pc_post_minutes = 75;
-params.ann_pre_from_pr_minutes = 15;
-params.ann_post_from_pc_minutes = 75;
-params.min_pct_expected_bars = 0.80;
+params.pr_pre_minutes = -5;
+params.pr_post_minutes = 25;
+params.pc_pre_minutes = -5;
+params.pc_post_minutes = 45;
+params.ann_pre_from_pr_minutes = -5;
+params.ann_post_from_pc_minutes = 45;
+params.min_pct_expected_bars = 1;
 params.max_share_low_volume = 0.50;
 params.max_internal_gap_minutes = 15;
 params.require_exact_event_bar = true;
 
-pref = readtable(prefFile, 'TextType', 'string');
+pref = readtable(prefFile, 'Delimiter', ',', 'ReadVariableNames', true, ...
+    'TextType', 'string', 'VariableNamingRule', 'preserve');
 
 requiredVars = ["event_date", "event_id", "root_code", "file_name_clean", ...
     "pr_datetime_local", "pc_datetime_local", "pr_datetime_utc", ...
@@ -65,6 +72,11 @@ if ~isempty(missingVars)
 end
 
 pref.event_date = Parse_date_flexible(pref.event_date);
+if string(getenv('FINAL_GENERATION_ONLY')) == "1"
+    assert(all(~isnat(pref.event_date) & pref.event_date >= datetime(2013,1,1)), ...
+        'FINAL_GENERATION_LEAKAGE: no pre-2013 event may enter the auxiliary rebuild');
+    pref = pref(pref.event_date < datetime(2026,1,1), :);
+end
 pref.pr_datetime_local = Parse_datetime_flexible(pref.pr_datetime_local);
 pref.pc_datetime_local = Parse_datetime_flexible(pref.pc_datetime_local);
 pref.pr_datetime_utc = Parse_utc_datetime(pref.pr_datetime_utc);
@@ -114,6 +126,7 @@ for i = 1:numel(uniqueFiles)
     end
 
     T = read_cleaned_file(fpath, importOpts);
+    T.Time = Canonical_bar_end_time(T.Time, 5, semantics.bar_label_semantics(1));
     fileCache(fname) = sortrows(T, 'Time');
 end
 
@@ -160,6 +173,7 @@ if ~isempty(eventWindowBars)
 end
 
 eventWindowPanel = build_wide_window_panel(eventWindowSummary);
+eventWindowPanel.window_protocol = repmat(finalCfg.version, height(eventWindowPanel), 1);
 
 barsFile = fullfile(windowDir, 'event_window_bars.csv');
 sumFile = fullfile(windowDir, 'event_window_summary.csv');
@@ -217,11 +231,11 @@ function winDef = build_window_definitions(row, params)
     pcTimeUtc = row.pc_datetime_utc;
 
     winDef = table();
-    winDef.window_name = ["PR"; "PC"; "ANN"];
-    winDef.event_time_local = [row.pr_datetime_local; row.pc_datetime_local; row.pr_datetime_local];
-    winDef.event_time_utc = [prTimeUtc; pcTimeUtc; prTimeUtc];
-    winDef.window_start_utc = [prTimeUtc - minutes(params.pr_pre_minutes); pcTimeUtc - minutes(params.pc_pre_minutes); prTimeUtc - minutes(params.ann_pre_from_pr_minutes)];
-    winDef.window_end_utc = [prTimeUtc + minutes(params.pr_post_minutes); pcTimeUtc + minutes(params.pc_post_minutes); pcTimeUtc + minutes(params.ann_post_from_pc_minutes)];
+    winDef.window_name = ["PR"; "PC"; "ANN"; "PRE_PR"];
+    winDef.event_time_local = [row.pr_datetime_local; row.pc_datetime_local; row.pr_datetime_local; row.pr_datetime_local];
+    winDef.event_time_utc = [prTimeUtc; pcTimeUtc; prTimeUtc; prTimeUtc];
+    winDef.window_start_utc = [prTimeUtc - minutes(params.pr_pre_minutes); pcTimeUtc - minutes(params.pc_pre_minutes); prTimeUtc - minutes(params.ann_pre_from_pr_minutes); prTimeUtc - minutes(55)];
+    winDef.window_end_utc = [prTimeUtc + minutes(params.pr_post_minutes); pcTimeUtc + minutes(params.pc_post_minutes); pcTimeUtc + minutes(params.ann_post_from_pc_minutes); prTimeUtc - minutes(5)];
 end
 
 function [winSummary, winBars] = process_event_windows(T, row, winDef, params)
@@ -239,7 +253,19 @@ function [winSummary, winBars] = process_event_windows(T, row, winDef, params)
         expectedTimes = transpose(w.window_start_utc : minutes(params.bar_minutes) : w.window_end_utc);
         nExpected = numel(expectedTimes);
 
+        [rr, ~, present] = Canonical_returns_on_grid(T.Time, T.Latest, ...
+            T.Volume, expectedTimes, params.bar_minutes);
+        [onGrid, loc] = ismember(X.Time, expectedTimes);
+        X = X(onGrid, :);
+        X.r_intra = rr(loc(onGrid));
         met = compute_window_metrics(X, w, expectedTimes, params);
+        met.nObs = sum(present);
+        met.pctExpected = mean(present);
+        met.exactEventBar = any(T.Time == w.event_time_utc);
+        if ~all(present)
+            met.rv = NaN; met.rsv_pos = NaN; met.rsv_neg = NaN;
+            met.absRet = NaN; met.netRet = NaN;
+        end
 
         eligible = met.pctExpected >= params.min_pct_expected_bars & met.shareLV <= params.max_share_low_volume & (isnan(met.maxGap) | met.maxGap <= params.max_internal_gap_minutes) & (~params.require_exact_event_bar | met.exactEventBar);
 
@@ -298,7 +324,7 @@ function met = compute_window_metrics(X, w, expectedTimes, params)
     if met.nObs >= 2
 
         gaps = minutes(diff(obsTimes));
-        r = diff(log(X.Latest));
+        r = X.r_intra;
 
         met.maxGap = max(gaps);
         met.medGap = median(gaps);
@@ -307,7 +333,7 @@ function met = compute_window_metrics(X, w, expectedTimes, params)
         met.rsv_pos = sum((r > 0) .* (r .^ 2), 'omitnan');
         met.rsv_neg = sum((r < 0) .* (r .^ 2), 'omitnan');
         met.absRet = sum(abs(r), 'omitnan');
-        met.netRet = log(X.Latest(end) / X.Latest(1));
+        met.netRet = sum(r);
 
     else
 
@@ -384,6 +410,7 @@ function B = build_window_bars(row, w, X)
     B.High = X.High;
     B.Low = X.Low;
     B.Latest = X.Latest;
+    B.r_intra = X.r_intra;
     B.Volume = X.Volume;
     B.rel_event_minutes = minutes(X.Time - w.event_time_utc);
 end

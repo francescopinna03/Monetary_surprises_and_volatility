@@ -3,9 +3,6 @@
 % The script reconstructs a bar-level panel for the PR event window. 
 %
 % For each event and asset-family observation, the code locates the cleaned
-% contract file, identifies the first bar at or after the press-release time
-% and extracts the same number of bars used in the PR-window panel. The first
-% return is computed using the bar immediately preceding the PR window, so that
 % the extracted return sequence is internally consistent with the intraday
 % price path.
 %
@@ -28,6 +25,7 @@ clear; clc;
 
 projectRoot = Get_project_root();
 Require_time_alignment_manifest(projectRoot);
+semantics = Require_window_semantics_manifest(projectRoot);
 
 analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 cleanDir = fullfile(projectRoot, 'Output', 'cleaned');
@@ -62,7 +60,7 @@ for i = 1:height(P)
     rootCode = string(P.root_code(i));
     cleanName = string(P.file_name_clean(i));
     prDT = P.pr_datetime_utc(i);
-    nTarget = P.PR_n_obs_bars(i);
+    nTarget = 5;
 
     eventId = "";
     if ismember("event_id", string(P.Properties.VariableNames))
@@ -82,6 +80,7 @@ for i = 1:height(P)
         C = fileCache(cacheKey);
     else
         C = read_clean_file(filePath);
+        C.bar_time = Canonical_bar_end_time(C.bar_time, 5, semantics.bar_label_semantics(1));
         fileCache(cacheKey) = C;
     end
 
@@ -138,6 +137,9 @@ for i = 1:height(P)
     St.PR_net_log_return_panel = prNet;
     St.absdiff_rv = abs(S.rv_from_bars - prRV);
     St.absdiff_net_return = abs(S.net_return_from_bars - prNet);
+    assert(isfinite(prRV) && St.absdiff_rv < 1e-12 && ...
+        isfinite(prNet) && St.absdiff_net_return < 1e-12, ...
+        'FINAL_RV_MISMATCH: rebuild Steps 5-14 on the canonical grid.');
     St.first_bar_time = S.first_bar_time;
     St.last_bar_time = S.last_bar_time;
     St.bns_eligible = S.bns_eligible;
@@ -246,30 +248,15 @@ function [B, S] = extract_pr_window(C, prDT, nTarget, minBarsForBNS)
         return;
     end
 
-    idx0 = find(C.bar_time >= prDT, 1, 'first');
-
-    if isempty(idx0)
-        S.status = "no_bar_at_or_after_pr";
+    endpoints = prDT + minutes((5:5:25)');
+    [r, ~, present, currPrice, prevPrice] = Canonical_returns_on_grid( ...
+        C.bar_time, C.price_bar, C.volume_bar, endpoints, 5);
+    if ~all(present)
+        S.status = "missing_exact_return_pair";
         return;
     end
-
-    if idx0 <= 1
-        S.status = "no_previous_bar";
-        return;
-    end
-
-    idxN = min(idx0 + nTarget - 1, height(C));
-    idx = idx0:idxN;
-
-    prevPrice = C.price_bar(idx - 1);
-    currPrice = C.price_bar(idx);
-    r = log(currPrice) - log(prevPrice);
-
-    B = table();
-    B.bar_time = C.bar_time(idx);
-    B.price_bar = currPrice;
-    B.prev_price_bar = prevPrice;
-    B.r_bar = r;
+    B = table(endpoints, currPrice, prevPrice, r, ...
+        'VariableNames', {'bar_time','price_bar','prev_price_bar','r_bar'});
 
     S.status = "ok";
     S.first_bar_time = B.bar_time(1);

@@ -38,6 +38,10 @@ analysisDir = fullfile(projectRoot, 'Output', 'analysis');
 statePanelFile = fullfile(analysisDir, 'pr_state_dependent_panel.csv');
 barFile = fullfile(analysisDir, 'pr_bar_panel.csv');
 
+Archive_analysis_outputs(analysisDir, ["pr_bns_component_panel.csv", ...
+    "pr_bns_model_coefficients.csv", "pr_bns_model_summary.csv", ...
+    "pr_bns_marginal_effects.csv", "pr_bns_feasibility_report.csv"]);
+
 minBarsForBNS = 5;
 minShareGroupsOk = 0.60;
 minMedianBars = 6;
@@ -75,6 +79,9 @@ B = B(~isnat(B.event_date) & B.root_code ~= "" & ~isnan(B.r_bar), :);
 [Comp, reportTbl] = compute_bns_components(B, barFile, minBarsForBNS, minShareGroupsOk, minMedianBars);
 
 reportFile = fullfile(analysisDir, 'pr_bns_feasibility_report.csv');
+reportTbl.bar_file_sha256 = File_sha256(barFile);
+reportTbl.state_panel_sha256 = File_sha256(statePanelFile);
+reportTbl.component_panel_sha256 = "";
 writetable(reportTbl, reportFile);
 
 if reportTbl.status(1) ~= "ok"
@@ -122,6 +129,8 @@ writetable(format_long_panel_for_write(Long), panelOut);
 writetable(coefResults, coefOut);
 writetable(modelResults, modelOut);
 writetable(postResults, postOut);
+reportTbl.component_panel_sha256 = File_sha256(panelOut);
+writetable(reportTbl, reportFile);
 
 fprintf('\n================ BNS VOLATILITY MODELS SUMMARY ================\n');
 fprintf('Component panel    : %s\n', panelOut);

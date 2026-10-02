@@ -108,6 +108,9 @@ Long.root_gg = double(Long.root_code == "gg");
 Long.target_x_hike = Long.shock_target_10bp .* Long.regime_hike;
 Long.target_x_preRV = Long.shock_target_10bp .* Long.state_pre_rv_z;
 Long.target_x_memory = Long.shock_target_10bp .* Long.ma3_target_10bp_z;
+Long.target_x_preRSVneg = Long.shock_target_10bp .* Long.state_pre_rsvneg_z;
+Long.M1_e_z = Long.lag1_target_10bp_z;
+Long.target_x_M1 = Long.shock_target_10bp .* Long.M1_e_z;
 
 eventStateFile = fullfile(analysisDir, 'event_state_panel.csv');
 longStateFile = fullfile(analysisDir, 'pr_state_dependent_panel.csv');

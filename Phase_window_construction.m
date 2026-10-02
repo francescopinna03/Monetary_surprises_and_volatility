@@ -274,21 +274,8 @@ function [S, R] = measure_phase(C, row, D, cfg, barSemantics)
 end
 
 function [returns, volumes, present] = returns_on_grid(C, endpoints, barMinutes)
-    previous = endpoints - minutes(barMinutes);
-    [hasCurrent, currentLoc] = ismember(endpoints, C.bar_end_utc);
-    [hasPrevious, previousLoc] = ismember(previous, C.bar_end_utc);
-    present = hasCurrent & hasPrevious;
-    returns = nan(numel(endpoints), 1);
-    volumes = nan(numel(endpoints), 1);
-    if any(present)
-        currentPrice = C.price(currentLoc(present));
-        previousPrice = C.price(previousLoc(present));
-        good = isfinite(currentPrice) & isfinite(previousPrice) & ...
-            currentPrice > 0 & previousPrice > 0;
-        positions = find(present);
-        returns(positions(good)) = log(currentPrice(good)) - log(previousPrice(good));
-        volumes(positions) = C.volume(currentLoc(present));
-    end
+    [returns, volumes, present] = Canonical_returns_on_grid( ...
+        C.bar_end_utc, C.price, C.volume, endpoints, barMinutes);
 end
 
 function V = variation_components(r, minimumReturns)

@@ -9,7 +9,6 @@
 % hyperbolic sine transformation of PR realized variance and the inverse
 % hyperbolic sine transformation of negative realized semivariance. The script
 % also constructs a placebo pre-PR window from the bar-level event-window file,
-% using observations in the interval from 15 to 5 minutes before the press
 % release.
 %
 % Monetary policy surprises are expressed in 10 basis point units. The script
@@ -94,8 +93,9 @@ for v = numVarsB
     end
 end
 
-B = B(B.window_name == "PR", :);
-Bpre = B(B.rel_event_minutes >= -15 & B.rel_event_minutes <= -5, :);
+assert(ismember("r_intra", string(B.Properties.VariableNames)), ...
+    'FINAL_WINDOWS_STALE: rebuild Event_windows.');
+Bpre = B(B.window_name == "PRE_PR", :);
 
 placebo = build_placebo_panel(Bpre);
 
@@ -228,12 +228,12 @@ function placebo = build_placebo_panel(Bpre)
 
         pre_PR_n_bars(g) = height(X);
 
-        if height(X) >= 2
+        if height(X) == 11 && all(isfinite(X.r_intra))
 
-            pre_PR_signed_jump(g) = log(X.Latest(end) / X.Latest(1));
+            pre_PR_signed_jump(g) = sum(X.r_intra);
             pre_PR_abs_jump(g) = abs(pre_PR_signed_jump(g));
 
-            r = diff(log(X.Latest));
+            r = X.r_intra;
 
             pre_PR_rv(g) = sum(r .^ 2, 'omitnan');
             pre_PR_rsv_neg(g) = sum((r < 0) .* (r .^ 2), 'omitnan');
