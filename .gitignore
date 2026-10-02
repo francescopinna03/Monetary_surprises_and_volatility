@@ -11,3 +11,8 @@ component_sufficiency_run.log
 phase_component_contrasts_run.log
 invariant_phase_attribution_run.log
 __pycache__/
+
+# Local test/build artifacts
+.pytest_cache/
+.DS_Store
+*.py[cod]
