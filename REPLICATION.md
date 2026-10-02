@@ -38,6 +38,16 @@ Econometrics_data/
 
 Barchart timestamps are wall-clock times in America/Chicago and are converted to UTC with IANA rules, never with fixed offsets. Bar labels mark the start of each interval, which was certified for Eurex from session boundaries, for the one-minute archive by aggregation against the five-minute archive, and for the CME from the reaction at documented release times. No price is filled, interpolated or carried across a missing bar.
 
+## Single command
+
+The whole sequence below runs with one command, which records the paths produced by each stage, stops at the first failure and resumes from the stage that failed when it is launched again. The second argument is the review token required by the confirmation freeze.
+
+```bash
+bash scripts/Run_replication.sh FACILITY I_HAVE_REVIEWED_THE_FROZEN_SPECIFICATION
+```
+
+Its progress is written to `Output/replication.log` and its state to `Output/replication_state.env`, and `DRY_RUN=1` prints the commands without executing them.
+
 ## Stages
 
 The stages run in the order below. Each runner writes into a new timestamped directory, records the commit, the state of the working tree and the hashes of the code and of the inputs, and packages its outputs into a ZIP archive. The steps that originally required a human decision, namely the review of the ECB calendar, the bar-label promotion, the five design decisions and the signature of the FOMC protocol, enter the replication through the certified files in `Raw/Certification`.
