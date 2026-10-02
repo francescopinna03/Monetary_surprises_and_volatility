@@ -51,7 +51,7 @@ def prepare(generation, historical, bridge, out):
         expected = gm['specification_sha256'] if name == 'specification.json' else gm['table_hashes'][name]
         if sha(generation/name) != expected:
             raise ValueError('Generation file hash mismatch: '+name)
-    model = Path(__file__).resolve().parent/'final_analysis/models.py'
+    model = Path(__file__).resolve().parents[1]/'final_analysis/models.py'
     if sha(model) != gm['code_hashes']['final_analysis/models.py']:
         raise ValueError('Archived generation counterfactual code differs')
     w = pd.read_csv(generation/'windows.csv', parse_dates=['trade_date'])
