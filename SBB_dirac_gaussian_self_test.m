@@ -23,9 +23,9 @@ function SBB_dirac_gaussian_self_test()
 
     % Verify all degree-six coefficients, not only the leading near-identity
     % coefficient.  This guards the removable-ratio Horner implementation.
-    delta = 1e-4;
-    lambda = 1 + delta;
+    lambda = 1 + 1e-4;
     seriesResult = SBB_dirac_gaussian_cost(0, 0, lambda, kappa);
+    delta = 1 - seriesResult.modes.P(1);
     expectedRatio = 1 / 2 + (2 / 3) * delta + (3 / 4) * delta^2 + ...
         (4 / 5) * delta^3 + (5 / 6) * delta^4 + ...
         (6 / 7) * delta^5 + (7 / 8) * delta^6;
@@ -47,6 +47,50 @@ function SBB_dirac_gaussian_self_test()
     assert(height(profile) == 3 && numel(details) == 3);
     assert(all(profile.total_cost >= 0));
 
+    crossingLambda = 1 + 1e-4;
+    seriesSide = SBB_dirac_gaussian_cost(0, 0, crossingLambda, kappa, 1e-4);
+    closedSide = SBB_dirac_gaussian_cost(0, 0, crossingLambda, kappa, 1e-5);
+    assert(seriesSide.modes.numerical_branch(1) == "series" && ...
+        closedSide.modes.numerical_branch(1) == "closed_form", ...
+        'The two tauNum values must select different branches.');
+    branchGap = abs(seriesSide.total_cost - closedSide.total_cost) / ...
+        seriesSide.total_cost;
+    assert(branchGap < 1e-6, ...
+        'The series and closed-form branches disagree by %g at the boundary.', ...
+        branchGap);
+
+    for degenerateKappa = [1.5, 3, 7]
+        limitValue = degenerateKappa / (2 * (degenerateKappa + 1));
+        degenerate = SBB_dirac_gaussian_cost(0, 0, 1e-12, degenerateKappa);
+        assert(abs(degenerate.volatility_cost - limitValue) < 1e-5, ...
+            'The degenerate volatility cost does not approach kappa/(2(kappa+1)).');
+        degenerateReference = sqrt((degenerateKappa + 1) * 1e-12);
+        assert(abs(degenerate.modes.c(1) - degenerateReference) < ...
+            1e-5 * degenerateReference, ...
+            'The degenerate mode does not follow c ~ sqrt((kappa+1) lambda).');
+    end
+
+    for quadratureKappa = [1.5, 3, 7]
+        for quadratureLambda = [0.2, 0.7, 1.3, 3]
+            reference = SBB_dirac_gaussian_cost(0, 0, quadratureLambda, ...
+                quadratureKappa);
+            [quadratureDrift, quadratureVolatility] = bridge_quadrature( ...
+                reference.modes.c(1), reference.modes.P(1), ...
+                reference.modes.Q(1), quadratureKappa);
+            assert(abs(quadratureDrift - reference.drift_cost) < ...
+                1e-8 * reference.drift_cost, ...
+                'Equation (54) disagrees with the bridge quadrature.');
+            assert(abs(quadratureVolatility - reference.volatility_cost) < ...
+                1e-8 * reference.volatility_cost, ...
+                'Equation (55) disagrees with the bridge quadrature.');
+        end
+    end
+
+    spread = SBB_dirac_gaussian_cost([0; 0; 0], [0; 0; 0], ...
+        diag([20, 1.3, 0.05]), kappa);
+    assert(spread.max_root_equation_residual < 1e-13, ...
+        'Equation (51) is not satisfied to numerical precision.');
+
     didFail = false;
     try
         SBB_dirac_gaussian_cost(0, 0, 1, 1);
@@ -56,4 +100,19 @@ function SBB_dirac_gaussian_self_test()
     assert(didFail, 'kappa <= 1 must fail closed.');
 
     fprintf('SBB_dirac_gaussian_self_test passed.\n');
+end
+
+function [drift, volatility] = bridge_quadrature(c, P, Q, kappa)
+
+    n = 200000;
+    t = ((1:n)' - 0.5) / n;
+    Pt = P + t .* (1 - P);
+    Qt = Q + t .* (c - Q);
+    sigma = Qt ./ Pt;
+    v = (Qt .^ 2) .* t ./ (P .* Pt);
+    vPrime = (2 .* Qt .* (c - Q) .* t .* Pt + (Qt .^ 2) .* Pt - ...
+        (Qt .^ 2) .* t .* (1 - P)) ./ (P .* (Pt .^ 2));
+    a = (vPrime - sigma .^ 2) ./ (2 .* v);
+    drift = mean(0.5 .* (a .^ 2) .* v);
+    volatility = mean(0.5 .* kappa .* (sigma - 1) .^ 2);
 end
