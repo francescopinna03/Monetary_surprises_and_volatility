@@ -1,56 +1,58 @@
-# Specifica congelata per la nuova stima
+# Frozen specification for the new estimation
 
-Questa implementazione conserva i tre livelli della domanda di ricerca. Il ramo finale parte dal controfattuale di fase; non riapre i gate degli Step 26–28 e non recupera le tabelle di aprile. La specifica è `Raw/Certification/final_analysis_spec_v1.json`. È un congelamento successivo all'audit esplorativo, non una preregistrazione retroattiva: `prior_results_seen=true` resta nel manifest.
+*Record written in September 2026 in Italian and translated into English. The original text is preserved in the repository history at commit `0a10406`. The file name is unchanged because the resumption scripts include it in their hashed inputs.*
 
-## Convenzioni e campione
+This implementation keeps the three levels of the research question. The final branch starts from the phase counterfactual, does not reopen the gates of Steps 26 to 28 and does not recover the April tables. The specification is `Raw/Certification/final_analysis_spec_v1.json`. It is a freeze subsequent to the exploratory audit and not a retroactive pre-registration, so `prior_results_seen=true` remains in the manifest.
 
-| Oggetto | Definizione eseguibile |
+## Conventions and sample
+
+| Object | Executable definition |
 |---|---|
-| PR | Rendimenti con endpoint +5,+10,+15,+20,+25 minuti; supporto effettivo `(PR, PR+25]` |
-| PC | Endpoint +5,…,+45; supporto `(PC, PC+45]` |
-| Stato e selezione del contratto | Endpoint −55,…,−5 rispetto a PR; supporto `(PR−60, PR−5]` |
-| Previsione della continuazione normale | Pre-PR per PR; endpoint PC−25,…,PC−5 per PC, come nel controfattuale di fase esistente |
-| Orologio | UTC, timestamp di fine intervallo; `interval_start` richiede lo spostamento di cinque minuti |
-| Dati mancanti | Nessun riempimento, interpolazione o rendimento fra barre non consecutive; tutte le coppie richieste devono essere presenti |
-| Outcome | BV bipower primaria; RV sensibilità. Si esclude lo zero dal log, senza sostituirlo con una costante |
-| Asset | fx/gg primari; fx/gg/hf/hr solo nella sensibilità dichiarata |
-| Contratto | Completezza e copertura pre-PR, poi volume pre-PR, infine nome file per risolvere parità; nessuna variabile post-PR entra nel ranking |
+| PR | Returns with endpoints at +5, +10, +15, +20 and +25 minutes, with effective support `(PR, PR+25]` |
+| PC | Endpoints at +5 to +45, with support `(PC, PC+45]` |
+| State and contract selection | Endpoints at −55 to −5 relative to PR, with support `(PR−60, PR−5]` |
+| Prediction of the normal continuation | Pre-PR window for PR; endpoints PC−25 to PC−5 for PC, as in the existing phase counterfactual |
+| Clock | UTC, end-of-interval timestamps; `interval_start` requires a shift of five minutes |
+| Missing data | No filling, no interpolation and no return between non-consecutive bars; every required pair must be present |
+| Outcome | Bipower variation as primary, realized variance as sensitivity; zeros are excluded from the logarithm and are not replaced by a constant |
+| Assets | fx and gg as primary; fx, gg, hf and hr only in the declared sensitivity |
+| Contract | Completeness and pre-PR coverage, then pre-PR volume, and finally the file name to break ties; no post-PR variable enters the ranking |
 
-RV e BV sono funzioni dello stesso vettore di rendimenti. BV usa `(pi/2) sum(abs(r_j*r_{j-1}))`, senza correzione per M. Con cinque rendimenti PR il linguaggio ammesso è *proxy bipower* e *residuo RV−BV*. Il codice non attribuisce strutturalmente continuo e salti.
+Realized variance and bipower variation are functions of the same vector of returns. The bipower variation is `(pi/2) sum(abs(r_j*r_{j-1}))`, without a correction for M. With five press-release returns the admissible language is *bipower proxy* and *RV−BV residual*, and the code does not attribute variation structurally to a continuous component and to jumps.
 
-Il pre-PC del modello di continuazione può contenere notizie PR. Questo condizionamento è mantenuto per confrontare la nuova batteria con il layer esistente; è distinto dallo stato che modula l'effetto, sempre pre-PR. La normalizzazione dello stato usa solo i controlli e non dipende dall'outcome scelto. Il requisito completo delle coppie e la disponibilità di cinque giornate per lo stato lento sono più restrittivi della copertura storica all'80% e della media su fino a cinque giornate disponibili: le variazioni di N vengono registrate.
+The pre-PC window of the continuation model may contain press-release news. This conditioning is kept so that the new battery can be compared with the existing layer, and it is distinct from the state that modulates the effect, which is always pre-PR. The normalization of the state uses control days only and does not depend on the chosen outcome. The requirement of complete pairs and of five available days for the slow state is stricter than the historical coverage of 80 percent and the mean over up to five available days, and the resulting changes in N are recorded.
 
-`event_registry.csv` include ogni meeting del calendario, ogni radice e ogni fase, anche quando manca il contratto o la sorpresa. Distingue copertura dei prezzi, positività BV/RV per il log, disponibilità di ciascun indicatore e status macro. I registri di campione prodotti dalla stima aggiungono le esclusioni effettive per modello, outcome, indicatore e leave-top-K. Non si impone che moduli con requisiti diversi abbiano artificialmente lo stesso N.
+`event_registry.csv` includes every meeting of the calendar, every root and every phase, even when the contract or the surprise is missing. It distinguishes price coverage, positivity of bipower variation and realized variance for the logarithm, the availability of each indicator and macro status. The sample registers produced by the estimation add the effective exclusions by model, outcome, indicator and leave-top-K. Modules with different requirements are not forced to have the same N.
 
-## Indicatori e confronti di fase
+## Indicators and phase comparisons
 
-La proxy primaria allineata è il rendimento logaritmico Schatz cambiato di segno; la coordinata azionaria è il rendimento netto fx nella medesima fase. Entrambe le coordinate devono chiudersi con l'outcome. Le unità sono deviazioni standard sui controlli PR/PC pooled, comuni alle due fasi e senza centratura. Non sono punti base di tasso e non sono uno shock strutturale esogeno.
+The primary aligned proxy is the Schatz log return with its sign reversed, and the equity coordinate is the net fx return in the same phase. Both coordinates must close with the outcome. The units are standard deviations over the pooled PR and PC control days, common to both phases and without centring. They are not basis points of interest rates and not an exogenous structural shock.
 
-La sensibilità Schatz–Bobl è la media a pesi uguali dei due rendimenti di prezzo cambiati di segno e divisi per le rispettive deviazioni standard sui controlli. OIS1Y e PC1 EA-EMPD restano due rami distinti, con la coordinata azionaria della fonte. Per PC sono esplicitamente **ex post**: cambiare la scadenza OIS non corregge il disallineamento temporale. Per ciascun ramo si stima sul suo campione PR/PC appaiato, e poi sul campione comune a tutti i rami.
+The Schatz–Bobl sensitivity is the equally weighted mean of the two price returns with their signs reversed, each divided by its standard deviation over control days. OIS1Y and the EA-EMPD first principal component remain two separate branches, each with the equity coordinate of its source. For PC they are explicitly **ex post**, since changing the OIS maturity does not correct the temporal misalignment. Each branch is estimated on its own paired PR–PC sample and then on the sample common to all branches.
 
-La batteria replica il contrasto della superficie quadratica dello Step 24 e la geometria invariante dello Step 25 nel runner finale. Non chiama automaticamente le vecchie funzioni 24–25, che dipendono dai manifest e dai gate storici. La metrica geometrica è la covarianza pooled delle coordinate, contando una sola osservazione per meeting-fase; gli intervalli bootstrap sono condizionati a questa metrica. Le rotazioni a 0.1, 0.25, 0.5, 0.75, 0.9 sono un audit finito, non l'intero insieme identificato e non una prova di attribuzione MP/CBI.
+The battery replicates the quadratic-surface contrast of Step 24 and the invariant geometry of Step 25 within the final runner. It does not call the old functions of Steps 24 and 25 automatically, because they depend on historical manifests and gates. The geometric metric is the pooled covariance of the coordinates, counting a single observation per meeting-phase, and the bootstrap intervals are conditional on this metric. The rotations at 0.1, 0.25, 0.5, 0.75 and 0.9 are a finite audit, not the whole identified set and not a proof of an MP/CBI attribution.
 
-Leave-top-K usa K=0,1,3,5 e ranking per energia totale, MP e CBI a livello meeting. Togliere un meeting elimina entrambe le fasi e tutti i suoi asset. La rotazione usa i meeting appaiati del campione dichiarato e viene ristimata nel campione ridotto; questa scelta va distinta dalla rotazione storica stimata sul calendario completo della fonte. Il controfattuale, stimato sui giorni non ECB, rimane invariato quando si eliminano soltanto meeting ECB. Ogni contrasto dichiarato ha un p wild; nessun p classico viene promosso al suo posto.
+Leave-top-K uses K = 0, 1, 3 and 5 and rankings by total, MP and CBI energy at the meeting level. Removing a meeting removes both phases and all its assets. The rotation uses the paired meetings of the declared sample and is re-estimated on the reduced sample, a choice distinct from the historical rotation estimated on the full calendar of the source. The counterfactual, estimated on non-ECB days, remains unchanged when only ECB meetings are removed. Every declared contrast has a wild p-value, and no classical p-value is promoted in its place.
 
-## Livello 1 e inferenza
+## Level 1 and inference
 
-Il ramo di media usa la sorpresa PR OIS1M/10, firmata e assoluta in specificazioni distinte, stato pre-PR, interazione sorpresa×stato, regime e indicatore asset. La risposta è il log BV anomalo; RV è sensibilità. Si testa l'interazione con wild cluster per meeting e correzione Holm della famiglia primaria. Le predizioni fuori campione escludono un intero anno dai meeting di training **e dai controlli usati dal primo stadio**. Tutta la centratura e la scala dello stato sono ristimate sui soli controlli di training. Non è una previsione in tempo reale: leave-year-out può usare anni successivi al fold di test.
+The mean branch uses the press-release OIS1M surprise divided by ten, signed and absolute in separate specifications, the pre-PR state, the interaction between surprise and state, the regime and an asset indicator. The response is the abnormal log bipower variation, with realized variance as sensitivity. The interaction is tested with a wild cluster bootstrap by meeting and a Holm correction over the primary family. Out-of-sample predictions exclude an entire year from the training meetings **and from the control days used by the first stage**. All centring and scaling of the state are re-estimated on the training control days only. This is not a real-time forecast, since leave-one-year-out can use years after the test fold.
 
-Il ramo di sufficienza usa la media a pesi uguali di fx e gg, richiedendo entrambi gli asset. Confronta il partial R² del blocco di stato con l'incremento di due sole variabili storiche: lag-1 e media dei tre precedenti OIS1M PR. I lag si costruiscono sul calendario integrale della fonte prima delle esclusioni; un dato mancante non viene saltato. Il risultato riguarda questa storia osservata e questa risposta aggregata, non l'intero stato teorico né la proprietà quasi-Markov generale. T_e e P_e restano esplicitamente non disponibili, senza proxy inventate.
+The sufficiency branch uses the equally weighted mean of fx and gg and requires both assets. It compares the partial R² of the state block with the increment from two historical variables only, the first lag and the mean of the three preceding press-release OIS1M surprises. The lags are built on the full calendar of the source before exclusions, and a missing value is not skipped. The result concerns this observed history and this aggregated response, not the whole theoretical state nor the general quasi-Markov property. T_e and P_e remain explicitly unavailable, and no proxy is invented for them.
 
-Il floor di potenza è una calibrazione condizionata al disegno, a livello meeting, lungo ciascuna delle due coordinate storiche residualizzate. Riporta anche size a R²=0 e usa il limite inferiore Wilson per dichiarare raggiunta potenza 0.80. Un mancato raggiungimento sulla griglia produce NaN; non estrapola una numerosità universale. L'upper bound percentile del partial R² è un diagnostico bootstrap, non un intervallo esatto. La regola finita richiede sia il bound sotto 0.02 sia potenza adeguata a quella scala. Una mancata reiezione non certifica sufficienza.
+The power floor is a design-conditional calibration at the meeting level along each of the two residualized historical coordinates. It also reports the size at R² = 0 and uses the Wilson lower bound to declare that power 0.80 has been reached. A failure to reach it on the grid produces NaN, and no universal sample size is extrapolated. The percentile upper bound of the partial R² is a bootstrap diagnostic and not an exact interval. The finite rule requires both a bound below 0.02 and adequate power at that scale, and a failure to reject does not certify sufficiency.
 
-Il wild principale impone il null ristretto, usa segni Rademacher comuni a tutti gli asset e le fasi del meeting, studentizzazione CR1 e p-value con correzione plus-one, 999 repliche. I p-value sono **condizionati agli indicatori misurati e al controfattuale stimato**. Questa versione non integra l'incertezza dei regressori generati e del primo stadio in un bootstrap congiunto. Non va descritta come tale. Gli output mantengono questa limitazione nel manifest e nelle tabelle. Holm distingue famiglie primarie da sensibilità; la griglia di sensibilità non seleziona il modello primario.
+The main wild bootstrap imposes the restricted null, uses Rademacher signs common to all assets and phases of a meeting, CR1 studentization and p-values with the plus-one correction, with 999 replications. The p-values are **conditional on the measured indicators and on the estimated counterfactual**. This version does not integrate the uncertainty of the generated regressors and of the first stage in a joint bootstrap and must not be described as doing so. The outputs keep this limitation in the manifest and in the tables. Holm distinguishes primary families from sensitivities, and the sensitivity grid does not select the primary model.
 
-## Rilasci USA
+## US releases
 
-Il flag delle 08:30 `America/New_York` considera ogni giorno feriale, gestisce DST e include conservativamente coincidenze sui bordi. È una possibile esposizione, non un calendario verificato di pubblicazioni. La sensibilità elimina il meeting appaiato se una delle sue fasi è esposta e ristima il layer normale dopo lo stesso filtro sui controlli. Il ramo scalare PR applica invece il filtro alle sole coincidenze PR, con la stessa esclusione nei propri controlli. La sola presenza di effetti per giorno della settimana non dimostra che la sorpresa macro sia assorbita.
+The 08:30 `America/New_York` flag considers every weekday, handles daylight saving time and conservatively includes coincidences at the boundaries. It marks a possible exposure and not a verified calendar of publications. The sensitivity removes the paired meeting if one of its phases is exposed and re-estimates the normal layer after applying the same filter to the control days. The scalar press-release branch instead applies the filter to press-release coincidences only, with the same exclusion among its own control days. The mere presence of day-of-week effects does not show that the macro surprise has been absorbed.
 
-Si può fornire `Raw/Certification/us_releases.csv` nel data root, con colonne `release_id,timestamp_utc,source_url` e timestamp UTC espliciti. Il build ne incorpora hash e flag dei rilasci. Senza il file, lo status è `candidate_screen_only`. La sensibilità conservativa resta calcolabile, anche se può fallire il gate di 30 meeting; il fallimento va riportato, non aggirato scegliendo le esclusioni dopo la stima.
+`Raw/Certification/us_releases.csv` may be supplied in the data root, with the columns `release_id`, `timestamp_utc` and `source_url` and explicit UTC timestamps. The build records its hash and the release flags. Without the file, the status is `candidate_screen_only`. The conservative sensitivity remains computable, although it may fail the gate of 30 meetings, and such a failure must be reported, not circumvented by choosing exclusions after the estimation.
 
-## Esecuzione e conservazione
+## Execution and retention
 
-Il runner Python permette di verificare il disegno sui dati disponibili senza una licenza MATLAB; le correzioni agli estrattori e allo shrinkage restano anche nel codice MATLAB. Requisiti: Python 3.10+ e `requirements-final-analysis.txt` (versioni effettive salvate nel manifest).
+The Python runner allows the design to be checked on the available data without a MATLAB licence, while the corrections to the extractors and to the shrinkage step also remain in the MATLAB code. Requirements are Python 3.10 or later and `requirements-final-analysis.txt`, with the actual versions saved in the manifest.
 
 ```bash
 python3 -m pip install -r requirements-final-analysis.txt
@@ -61,13 +63,13 @@ python3 -m pip install -r requirements-final-analysis.txt
   --output /path/to/Econometrics_data/Output/final_analysis_v1
 ```
 
-Un percorso già esistente viene rifiutato: per una revisione usare una nuova directory. La stima verifica gli hash del codice eseguibile, della specifica, dei dati sorgente e delle tabelle congelate. Modificare il codice dopo il congelamento richiede un nuovo build. `--smoke` su `estimate` usa 19 repliche e una griglia ridotta: ogni output è marcato `complete_smoke_not_for_inference` e non sostiene conclusioni econometriche.
+An existing path is rejected, and a revision requires a new directory. The estimation verifies the hashes of the executable code, of the specification, of the source data and of the frozen tables, so that changing the code after the freeze requires a new build. `--smoke` on `estimate` uses 19 replications and a reduced grid, and every output is marked `complete_smoke_not_for_inference` and supports no econometric conclusion.
 
-I nuovi output non sovrascrivono quelli storici. `Run_pipeline` rimane la pipeline storica per gli esercizi precedenti; non è l'entry point della stima finale. `Output/paper_tables` di aprile va trattato come **superseded** rispetto alle finestre canoniche: il runner non ne importa alcuna tabella e non ne cancella l'archivio.
+The new outputs do not overwrite the historical ones. `Run_pipeline` remains the historical pipeline for the earlier exercises and is not the entry point of the final estimation. The April `Output/paper_tables` are to be treated as **superseded** with respect to the canonical windows, and the runner imports none of their tables and does not delete their archive.
 
-Con cinque rendimenti PR lo Step 16 si ferma al gate BNS storico, che richiede una mediana di almeno sei. Questa soglia rimane invariata. Lo Step 17 registra il ramo BV come `blocked_bns_gate` e stima soltanto il diagnostico RV dal pannello di stato, senza usare eventuali file BNS residui. Il nuovo report di fattibilità vincola tramite hash barre, stato e, se prodotto, pannello BNS. I vecchi output BNS e quasi-Markov vengono archiviati prima di una nuova esecuzione. Questo arresto non blocca il calcolo della proxy bipower nella batteria finale Python.
+With five press-release returns, Step 16 stops at the historical BNS gate, which requires a median of at least six. This threshold is unchanged. Step 17 records the bipower branch as `blocked_bns_gate` and estimates only the realized-variance diagnostic from the state panel, without using any residual BNS files. The new feasibility report binds bars, state and, when produced, the BNS panel by hash. The old BNS and quasi-Markov outputs are archived before a new execution. This stop does not prevent the computation of the bipower proxy in the final Python battery.
 
-Per il rerun ausiliario MATLAB:
+For the auxiliary MATLAB rerun:
 
 ```matlab
 setenv('ECONOMETRICS_DATA_ROOT', '/path/to/Econometrics_data');
@@ -75,12 +77,12 @@ setenv('FINAL_ANALYSIS_BUILD', '/path/to/Econometrics_data/Raw/Certification/fin
 Run_final_matlab_checks
 ```
 
-Il driver verifica gli input congelati, usa `preferred_contracts.csv` con selezione pre-PR, archivia le directory storiche `analysis` ed `event_windows`, ricostruisce le finestre e ristima anche lo shrinkage. La 1-SE sceglie la penalizzazione più forte nella banda; interazioni da variabili grezze, scaling, centratura e massimo lambda del fold evitano l'uso del test fold nel training. Le statistiche post-selezione sono etichettate descrittive. La penalizzazione sparse-group esistente non impone strong heredity.
+The driver verifies the frozen inputs, uses `preferred_contracts.csv` with pre-release selection, archives the historical `analysis` and `event_windows` directories, rebuilds the windows and re-estimates the shrinkage step as well. The one-standard-error rule selects the strongest penalty within the band, and interactions from raw variables, scaling, centring and the maximum lambda of the fold prevent the test fold from entering training. Post-selection statistics are labelled descriptive. The existing sparse-group penalty does not impose strong heredity.
 
-Test riproducibili:
+Reproducible tests:
 
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-In MATLAB: `Final_window_self_test`. Disponibilità e risultati delle verifiche effettuate in questa modifica sono riportati in `FINAL_ANALYSIS_VALIDATION.md`.
+In MATLAB, run `Final_window_self_test`. The availability and results of the checks performed for this change are reported in `FINAL_ANALYSIS_VALIDATION.md`.

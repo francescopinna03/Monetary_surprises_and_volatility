@@ -1,145 +1,88 @@
-# Catena di conferma v2: costruzione protetta, calibrazione, freeze, stima
+# The v2 confirmation chain: protected build, calibration, freeze and estimation
 
-Stato: implementazione completa della catena. La specifica `final_analysis_spec_v2.json`
-resta in bozza finche' `Run_confirmation.sh freeze` non la risolve in `frozen_v2`.
-Nessun outcome del campione di conferma e' stato costruito in sviluppo.
+*Record written in September 2026 in Italian and translated into English. The original text is preserved in the repository history at commit `0f6daab`.*
 
-Questo documento descrive solo le quattro fasi nuove. Inventario, audit di qualita'
-e ponte di generazione restano descritti in `CONFIRMATION_PROTOCOL_V2.md` e
-`CONFIRMATION_NEXT_STEPS.md`.
+Status: complete implementation of the chain. The specification `final_analysis_spec_v2.json` remains a draft until `Run_confirmation.sh freeze` resolves it into `frozen_v2`. No outcome of the confirmation sample was built during development.
 
-## Decisioni riviste
+This document describes only the four new stages. The inventory, the quality audit and the generation bridge are described in `CONFIRMATION_PROTOCOL_V2.md` and `CONFIRMATION_NEXT_STEPS.md`.
 
-Le cinque questioni aperte non sono risolte dal codice. `Run_confirmation.sh decisions-template`
-scrive `Raw/Certification/confirmation_decisions_v2.json` con le alternative ammissibili e
-i campi `reviewer`, `decided_on`, `rationale` vuoti. `load_decisions` rifiuta un file con
-scelta assente, scelta non ammissibile, revisore mancante, motivazione mancante o data
-mancante. Nessun altro modulo ha un valore di ripiego.
+## Reviewed decisions
 
-| Chiave | Alternative ammissibili |
+The five open questions are not settled by the code. `Run_confirmation.sh decisions-template` writes `Raw/Certification/confirmation_decisions_v2.json` with the admissible alternatives and with empty `reviewer`, `decided_on` and `rationale` fields. `load_decisions` rejects a file with a missing choice, an inadmissible choice, or a missing reviewer, rationale or date. No other module provides a fallback value.
+
+| Key | Admissible alternatives |
 |---|---|
-| `pc_normal_pre_support` | griglia v1 con endpoint -25..-5, supporto (-30,-5] |
-| `slow_state_rule` | media dei cinque precedenti giorni-contratto **non evento** |
-| `equity_source_rule` | STOXX50E esterno omogeneo 2000-2012, oppure ibrido fx quando disponibile |
-| `secondary_family_rule` | famiglia secondaria della specifica, blocco storico congiunto unico |
-| `us_calendar_status` | solo screen di candidati, oppure calendario verificato fornito |
+| `pc_normal_pre_support` | v1 grid with endpoints −25 to −5, support (−30, −5] |
+| `slow_state_rule` | mean over the five preceding **non-event** contract-days |
+| `equity_source_rule` | homogeneous external STOXX50E for 2000–2012, or a hybrid with the fx futures where available |
+| `secondary_family_rule` | secondary family of the specification, with a single joint history block |
+| `us_calendar_status` | candidate screen only, or a supplied verified calendar |
 
-La seconda voce non e' cosmetica. `final_analysis/data.py` calcola `slow5_log_rv` dalla RV
-giornaliera dei cinque giorni-contratto precedenti, inclusi i giorni di riunione, e quindi
-da outcome post-annuncio di eventi. Nel campione di conferma quella regola leggerebbe
-outcome prima del freeze. La regola v2 esclude i giorni evento dal calcolo. La differenza
-fra le due regole e' misurata sul campione di **generazione** e riportata in
-`slow_state_validation_generation.csv`, mai sul campione di conferma.
+The second entry is substantive. `final_analysis/data.py` computes `slow5_log_rv` from the daily realized variance of the five preceding contract-days, including meeting days, and therefore from post-announcement outcomes of events. On the confirmation sample that rule would read outcomes before the freeze. The v2 rule excludes event days from the computation. The difference between the two rules is measured on the **generation** sample and reported in `slow_state_validation_generation.csv`, never on the confirmation sample.
 
-## Costruzione protetta
+## Protected build
 
 ```bash
 bash Run_confirmation_calibration.sh \
   "$HOME/Desktop/Monetary_surprises_FULL_rqjB5J" \
-  /percorso/confirmation_quality_RUN/quality
+  /path/confirmation_quality_RUN/quality
 ```
 
-Esegue `control-build` e poi `calibrate`, e chiude con un report di prontezza. Produce uno
-ZIP anche dopo un errore.
+The runner executes `control-build` and then `calibrate`, and ends with a readiness report. It produces a ZIP archive even after a failure.
 
-`control-build` ricostruisce le finestre dai file grezzi gia' certificati, in **modalita'
-cieca**: per una riunione nessun prezzo successivo all'annuncio viene letto. Le righe evento
-conservano soltanto la finestra di stato pre-PR, la copertura e l'ammissibilita' certificata.
-Una guardia esplicita solleva `BLINDING_VIOLATION` se una qualunque quantita' post-annuncio
-di un evento risulta finita. Le tabelle prodotte sono i controlli completi, il registro pre
-degli eventi e le covariate EA-EMPD.
+`control-build` rebuilds the windows from the raw files already certified, in **blind mode**, so that no price after the announcement is read for any meeting. Event rows keep only the pre-release state window, the coverage and the certified admissibility. An explicit guard raises `BLINDING_VIOLATION` if any post-announcement quantity of an event is finite. The tables produced are the complete control days, the pre-release register of events and the EA-EMPD covariates.
 
-Lo strato di continuazione normale v2 differisce dal v1 in due punti dichiarati: nessun
-indicatore di regime 2022, che sarebbe identicamente nullo prima del 2013, e origine del
-trend al 2000-01-01. Il modulo v1 non e' toccato, cosi' il ponte continua a verificarne gli
-hash.
+The v2 normal-continuation layer differs from v1 in two declared respects, namely the absence of a 2022 regime indicator, which would be identically zero before 2013, and a trend whose origin is 1 January 2000. The v1 module is left untouched, so the bridge continues to verify its hashes.
 
-## Calibrazione ex ante
+## Ex-ante calibration
 
-`calibrate` non legge alcun outcome di conferma. Il rumore proviene dai residui
-leave-year-out della BV anomala dei giorni-radice **di controllo** del Bund, ricampionati
-dentro l'anno solare. Il disegno usa le coordinate esterne EA-EMPD e lo stato pre-PR,
-perche' la coordinata Schatz allineata di una riunione e' essa stessa una quantita'
-post-annuncio e resta non letta fino al freeze.
+`calibrate` reads no confirmation outcome. The noise comes from the leave-one-year-out residuals of the abnormal bipower variation on Bund **control** root-days, resampled within the calendar year. The design uses the external EA-EMPD coordinates and the pre-release state, because the aligned Schatz coordinate of a meeting is itself a post-announcement quantity and remains unread until the freeze.
 
-Produce due curve di potenza: la dimensione rilevabile delle due ipotesi primarie sulla
-griglia `delta_grid`, e il floor del partial R2 storico su `power_partial_r2_grid`, entrambe
-con limite inferiore di Wilson al 95% e soglia `power_target`. Il margine calibrato entra
-nella specifica congelata accanto al margine scientifico di riferimento, che resta distinto:
-una precisione raggiungibile non e' una soglia di trascurabilita' economica.
+The stage produces two power curves, the detectable size of the two primary hypotheses on the grid `delta_grid` and the floor of the historical partial R² on `power_partial_r2_grid`, both with a 95 percent Wilson lower bound and the threshold `power_target`. The calibrated margin enters the frozen specification next to the scientific reference margin, which remains distinct, since an attainable precision is not a threshold of economic negligibility.
 
-La dimensione rilevabile e' espressa nella metrica esterna. Il primario congelato usa la
-coordinata Schatz allineata: il manifesto lo dichiara e il numero non va letto come una
-soglia sulla scala del test primario.
+The detectable size is expressed in the external metric. The frozen primary test uses the aligned Schatz coordinate, the manifest states this, and the number must not be read as a threshold on the scale of the primary test.
 
 ## Freeze
 
 ```bash
 bash Run_confirmation_final.sh \
   "$HOME/Desktop/Monetary_surprises_FULL_rqjB5J" \
-  /percorso/confirmation_quality_RUN/quality \
-  /percorso/confirmation_calibration_RUN/build \
-  /percorso/confirmation_calibration_RUN/calibration \
-  /percorso/confirmation_preparation_RUN/bridge \
+  /path/confirmation_quality_RUN/quality \
+  /path/confirmation_calibration_RUN/build \
+  /path/confirmation_calibration_RUN/calibration \
+  /path/confirmation_preparation_RUN/bridge \
   I_HAVE_REVIEWED_THE_FROZEN_SPECIFICATION
 ```
 
-Il token finale e' obbligatorio. Il freeze e' l'unico punto in cui gli outcome del campione
-di conferma vengono costruiti, e non e' reversibile.
+The final token is mandatory. The freeze is the only point at which the outcomes of the confirmation sample are built, and it cannot be reversed.
 
-Prima di costruire, `freeze` verifica che la calibrazione appartenga a quella costruzione
-protetta, che la costruzione protetta appartenga a quell'audit di qualita', che le decisioni
-non siano cambiate dopo la costruzione, che il ponte sia una diagnostica di sola generazione
-con tabelle intatte, e che entrambe le famiglie con claim superino il gate di risoluzione
-`1/(B+1) <= alpha/m`. Con B = 19.999 e m = 2 la soglia di Holm e' 0,025 e il p minimo
-raggiungibile 0,00005: il primo rifiuto e' possibile. Una directory di destinazione esistente
-viene rifiutata.
+Before building, `freeze` verifies that the calibration belongs to the protected build, that the protected build belongs to the quality audit, that the decisions have not changed after the build, that the bridge is a generation-only diagnostic with intact tables, and that both families carrying a claim pass the resolution gate `1/(B+1) <= alpha/m`. With B = 19,999 and m = 2 the Holm threshold is 0.025 and the smallest attainable p-value is 0.00005, so a first rejection is possible. An existing destination directory is rejected.
 
-La specifica risolta registra la fonte azionaria scelta, il margine calibrato, gli esiti dei
-quattro controlli del ponte e i due gate di risoluzione.
+The resolved specification records the chosen equity source, the calibrated margin, the outcomes of the four bridge checks and the two resolution gates.
 
-## Stima
+## Estimation
 
-`estimate` accetta soltanto una build `frozen_v2` con hash di tabelle, specifica e codice
-invariati. Produce tre file separati.
+`estimate` accepts only a `frozen_v2` build whose table, specification and code hashes are unchanged. It produces three separate files.
 
-`primary_tests.csv` contiene i due test primari: H1, media di cono MP positiva, e H2,
-differenza MP meno CBI positiva, entrambi sulla superficie PR del Bund a stato nullo, con
-coordinata Schatz allineata, unilaterali, Holm su due. `primary_surface.csv` riporta la
-matrice grezza, i funzionali di cono, autovalori e direzione principale: sono invarianti per
-rotazione e non sono energie MP/CBI ruotate.
+`primary_tests.csv` holds the two primary tests, H1, a positive mean over the MP cone, and H2, a positive difference between the MP and the CBI means, both on the press-release surface of the Bund at zero state, with the aligned Schatz coordinate, one-sided, with Holm over two. `primary_surface.csv` reports the raw matrix, the cone functionals, the eigenvalues and the principal direction, which are invariant under rotation and are not rotated MP and CBI energies.
 
-`secondary_tests.csv` contiene la famiglia secondaria dichiarata: modulazione da parte dello
-stato, bilaterale, sulla matrice di interazione; le stesse due ipotesi sulla RV anomala; e
-le stesse due ipotesi dentro ciascuna delle due epoche. Otto p-value, Holm dentro la
-famiglia, etichettati come secondari.
+`secondary_tests.csv` holds the declared secondary family, namely the modulation by the state, two-sided, on the interaction matrix, the same two hypotheses on abnormal realized variance, and the same two hypotheses within each of the two epochs. The eight p-values are corrected by Holm within the family and labelled as secondary.
 
-`sensitivity_tests.csv` contiene leave-top-K per energia totale, indicatori alternativi,
-radici alternative e lo screen USA sul solo ramo PR. Nessuna correzione simultanea e nessun
-claim: l'etichetta `descriptive_no_simultaneous_claim` e' scritta in ogni riga.
+`sensitivity_tests.csv` holds leave-top-K by total energy, alternative indicators, alternative roots and the US screen on the press-release branch only. There is no simultaneous correction and no claim, and every row carries the label `descriptive_no_simultaneous_claim`.
 
-L'inferenza resta condizionata agli indicatori misurati e allo strato di continuazione
-stimato. Il bootstrap non integra l'incertezza di costruzione degli indicatori.
+Inference remains conditional on the measured indicators and on the estimated continuation layer. The bootstrap does not integrate the uncertainty in the construction of the indicators.
 
 ## Step 28
 
-`Raw/Certification/step28_sbb_specification_extended_calibration.csv` deriva dalla specifica
-congelata e ne cambia un solo valore: la griglia di numerosita' arriva a 500 riunioni.
-Serve a registrare dove si colloca il campione esteso rispetto ai criteri gia' congelati.
+`Raw/Certification/step28_sbb_specification_extended_calibration.csv` derives from the frozen specification and changes a single value, extending the sample-size grid to 500 meetings. Its purpose is to record where the extended sample stands relative to criteria that were already frozen.
 
 ```bash
 STEP28_SBB_SPECIFICATION=Raw/Certification/step28_sbb_specification_extended_calibration.csv \
-  ./Run_step28_gates.sh /percorso/Econometrics_data
+  ./Run_step28_gates.sh /path/Econometrics_data
 ```
 
-E' una calibrazione outcome-free. Nessuna stima SBB, nessun outcome evento. Il risultato va
-nella sezione dei limiti, non fra i risultati economici.
+This is an outcome-free calibration, with no bridge estimation and no event outcome. Its result belongs to the discussion of limits and not to the economic results.
 
-## Cosa la catena continua a rifiutare
+## Remaining blocks of the readiness report
 
-Il report di prontezza resta bloccante su `external_window_timing` finche' gli orari di
-base e di chiusura delle finestre EA-EMPD non sono legati a evidenza di fonte, e su
-`us_release_calendar` finche' esiste solo lo screen dei candidati. Uno screen dei giovedi'
-alle 8:30 di New York non e' un calendario verificato di rilasci. Queste voci non impediscono
-il freeze per costruzione: impediscono di descrivere il risultato come se quelle verifiche
-fossero state fatte.
+The readiness report remains blocking on `external_window_timing` until the start and end times of the EA-EMPD windows are tied to source evidence, and on `us_release_calendar` as long as only the candidate screen exists. A screen of Thursdays at 8:30 New York time is not a verified release calendar. These entries do not prevent the freeze by construction, but they prevent the result from being described as if those verifications had been made.

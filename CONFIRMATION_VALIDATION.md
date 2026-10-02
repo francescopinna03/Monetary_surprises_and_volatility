@@ -1,39 +1,30 @@
-# Verifica della preparazione v2, 12 settembre 2026
+# Verification of the v2 preparation, 12 September 2026
 
-Base del repository `c224fe07dded3599bfb57f8be23e5e4c2032db53`. Il nuovo codice e' isolato in `confirmation_analysis`; i moduli Python e la specifica v1 non sono modificati. Lo stato v2 e' `draft_not_frozen`. Non e' stata eseguita alcuna regressione o costruzione di outcome evento sul 2000-2012.
+*Record written on 12 September 2026 in Italian and translated into English. The original text is preserved in the repository history at commit `0f6daab`.*
 
-**Verifica automatica.** Undici test Python passano. Controllano l'integrazione diretta dei funzionali di cono, il fattore due della base incrociata, il cambio di base con rotazione del dominio, CR1 per combinazioni lineari, code unilaterali firmate, invarianza rispetto al batching del bootstrap, gate di risoluzione, anni 00/12/99 e limite superiore, DST storico, blocco del ponte prima della lettura di outcome pre-2013, audit senza colonne prezzo e distinzione fra finestra GC_PC e conferenza verificata. La sintassi dei due runner shell e' verificata. I self-test MATLAB sono inclusi ma non sono stati eseguiti in questo ambiente; il runner preparatorio li esegue sul Mac quando MATLAB e' disponibile.
+Repository base: `c224fe07dded3599bfb57f8be23e5e4c2032db53`. The new code is isolated in `confirmation_analysis`, and neither the Python modules nor the v1 specification are modified. The v2 status is `draft_not_frozen`. No regression and no construction of event outcomes was performed on 2000–2012.
 
-**Ponte sul solo campione di generazione.** Build di ingresso `final_resume_20260911_174739_4124`, manifest SHA256 `d7ef6b78ccb6be4283a196da4afe3c55458b25e8147c225b5b595454bf281b85`. Il filtro e' 2013-01-01 / 2025-12-31. Le due fonti sono confrontate sullo stesso campione di 111 meeting. Outcome Bund-only, log BV anomala con continuazione e stato leave-year-out; base grezza a otto colonne, scala PR dei controlli per i futures e degli eventi di generazione per STOXX50E. Bootstrap direzionale con 19.999 repliche.
+**Automatic verification.** Eleven Python tests pass. They check the direct integration of the cone functionals, the factor of two in the cross basis, the change of basis under a rotation of the domain, CR1 standard errors for linear combinations, signed one-sided tails, invariance to the batching of the bootstrap, the resolution gate, the years 00, 12 and 99 and the upper limit, historical daylight saving time, the block of the bridge before any pre-2013 outcome is read, the audit without price columns, and the distinction between a `GC_PC` window and a verified press conference. The syntax of the two shell runners is verified. The MATLAB self-tests are included but were not run in this environment, and the preparatory runner executes them on the author's Mac when MATLAB is available.
 
-| Ipotesi | Futures azionario | STOXX50E EA-EMPD |
+**Bridge on the generation sample only.** Input build `final_resume_20260911_174739_4124`, manifest SHA-256 `d7ef6b78ccb6be4283a196da4afe3c55458b25e8147c225b5b595454bf281b85`. The filter is 2013-01-01 to 2025-12-31. The two sources are compared on the same sample of 111 meetings. The outcome is the abnormal log bipower variation of the Bund alone, with leave-one-year-out continuation and state, the eight-column raw basis, the press-release control scale for the futures and the generation-event scale for STOXX50E. Directional bootstrap with 19,999 replications.
+
+| Hypothesis | Equity futures | EA-EMPD STOXX50E |
 |---|---:|---:|
-| H1, media del cono MP positiva, p wild | 0.00030 | 0.00125 |
-| H2, media MP meno media CBI positiva, p wild | 0.28890 | 0.06260 |
+| H1, positive mean over the MP cone, wild p | 0.00030 | 0.00125 |
+| H2, MP mean minus CBI mean positive, wild p | 0.28890 | 0.06260 |
 
-Le stime puntuali sono positive. Questi sono risultati di generazione, non conferme sul nuovo campione. La metrica delle due coordinate non e' identica, quindi i coefficienti non si confrontano come effetti nella stessa unita'. H1 non e' il vecchio coefficiente di energia MP ruotata; H2 non e' deducibile dalla non significativita' separata di CBI.
+The point estimates are positive. These are results on the generation sample and not confirmations on the new sample. The metric of the two coordinates is not identical, so the coefficients cannot be compared as effects in the same unit. H1 is not the earlier coefficient on the rotated MP energy, and H2 cannot be inferred from the separate insignificance of CBI.
 
-La correlazione fra le coordinate azionarie e' 0.947336, sopra 0.90. La mediana JK con STOXX50E e' 0.550263 e appartiene all'intervallo con futures [0, 1.145027]. Il confronto dei p entro un fattore tre non passa: i rapporti esterno/futures sono 4.166667 per H1 e 0.216684 per H2. Il rapporto fra SD azionaria EA sugli eventi e SD dei futures sui controlli e' 2.497509, fuori [0.7, 1.4]. Il ponte registra quindi il fallback esterno omogeneo come candidato da discutere e lascia `selection_finalized=false`. Nessuna scelta e' presa usando gli outcome 2000-2012.
+The correlation between the two equity coordinates is 0.947336, above 0.90. The median JK statistic with STOXX50E is 0.550263 and lies in the interval obtained with futures, [0, 1.145027]. The comparison of p-values within a factor of three fails, with external-to-futures ratios of 4.166667 for H1 and 0.216684 for H2. The ratio between the standard deviation of the EA equity surprise on events and that of the futures on control days is 2.497509, outside [0.7, 1.4]. The bridge therefore records the homogeneous external fallback as a candidate for discussion and leaves `selection_finalized=false`. No choice is made using 2000–2012 outcomes.
 
-**Metadati del nuovo periodo.** Il file EA-EMPD gia' disponibile contiene 181 date con 181 finestre GC_PR e 181 GC_PC. OIS1M manca in 13 finestre PR e 7 PC. Il registro conserva 1.448 righe data-radice-fase. Le finestre PC del dataset non sono automaticamente conferenze effettive; calendario e orari devono essere verificati. La copia dei dati disponibile nell'ambiente di sviluppo non contiene i nuovi 164 contratti: l'audit dei loro file e delle sessioni deve essere eseguito sul Mac. Il conteggio zero di questa prova descrive la disponibilita' locale, non l'archivio scaricato dall'autore.
+**Metadata of the new period.** The available EA-EMPD file contains 181 dates with 181 `GC_PR` and 181 `GC_PC` windows. OIS1M is missing in 13 press-release windows and 7 press-conference windows. The register holds 1,448 date–root–phase rows. Press-conference windows in the dataset are not automatically actual conferences, and calendar and times must be verified. The copy of the data available in the development environment does not contain the 164 new contracts, so the audit of their files and sessions must be run on the author's Mac. The zero count of this check describes local availability and not the archive downloaded by the author.
 
-I risultati del ponte e i metadati vengono rigenerati da `Run_confirmation_prepare.sh`. La specifica confermativa, la calibrazione ex ante, la famiglia secondaria con il relativo intervallo e il runner di stima v2 restano da completare prima del freeze.
+The bridge results and the metadata are regenerated by `Run_confirmation_prepare.sh`. The confirmatory specification, the ex-ante calibration, the secondary family with its interval and the v2 estimation runner remained to be completed before the freeze.
 
-## Audit di qualita' aggiunto al branch del 12 settembre
+## Quality audit added to the branch of 12 September
 
-L'ultimo inventario fornito dall'autore trova 164 celle attese, 163 con barre,
-una cella vuota `fxh11` e dieci celle con copie candidate. Il ramo primario
-esclude la duplicazione delle sorgenti. Questi risultati sono metadati del Mac,
-non una validazione OHLC effettuata in questo ambiente.
+The latest inventory supplied by the author finds 164 expected cells, 163 with bars, one empty cell `fxh11` and ten cells with candidate copies. The primary branch excludes duplicated sources. These results are metadata from the author's Mac and not an OHLC validation performed in this environment.
 
-Il nuovo audit di qualita' e' verificato su dati sintetici. I test controllano
-griglie esatte e buchi interni, supporto PR, DST storico, OHLC, timestamp duplicati,
-volumi nulli senza cancellazione, assenza di look-ahead nella regola degli spike
-e nella selezione, priorita' delle sorgenti, hash cambiati e conferenze assenti.
-Non vengono costruiti RV/BV o regressori sorpresa sul campione di conferma.
-Il dataset grezzo profondo resta sul Mac; questa PR non certifica l'esito del
-suo audit, non congela v2 e non implementa ancora calibrazione o stima.
+The new quality audit is verified on synthetic data. The tests check exact grids and internal gaps, press-release support, historical daylight saving time, OHLC consistency, duplicated timestamps, zero volumes without deletion, the absence of look-ahead in the spike rule and in contract selection, source priority, changed hashes and absent press conferences. No realized variance, bipower variation or surprise regressor is built on the confirmation sample. The deep raw dataset remains on the author's Mac, and this pull request neither certifies the outcome of its audit, nor freezes v2, nor implements calibration or estimation.
 
-Verifica locale finale: 39 test Python superati (24 conferma/qualita' e 15 v1),
-compilazione Python, sintassi dei quattro runner shell e `git diff --check`
-superati. I nuovi self-test MATLAB sono inclusi ma non eseguiti qui.
+Final local verification: 39 Python tests pass (24 for confirmation and quality, 15 for v1), together with Python compilation, the syntax of the four shell runners and `git diff --check`. The new MATLAB self-tests are included but not run here.

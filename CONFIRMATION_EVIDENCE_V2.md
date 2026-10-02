@@ -1,173 +1,104 @@
-# Evidenza automatizzata: calendario BCE e semantica delle barre
+# Automated evidence: ECB calendar and bar-label semantics
 
-Due voci restavano aperte riga per riga: quali riunioni del 2000-2012 ebbero una
-conferenza stampa, e se l'etichetta di una barra a cinque minuti sia l'inizio o
-la fine del suo intervallo. Entrambe si automatizzano quasi del tutto. Nessuna
-delle due si chiude senza una firma umana, e questo documento dice esattamente
-dove passa il confine.
+*Record written in September 2026 in Italian and translated into English. The original text is preserved in the repository history at commit `0f6daab`.*
 
-## Calendario BCE
+Two items remained open row by row, namely which meetings of 2000–2012 were followed by a press conference, and whether the label of a five-minute bar marks the start or the end of its interval. Both can be automated almost entirely, neither can be closed without a human signature, and this document states exactly where the boundary lies.
 
-La BCE pubblica due indici che sono i discriminanti che servono. L'indice delle
-decisioni di politica monetaria elenca per anno ogni decisione del Consiglio
-direttivo; l'archivio delle dichiarazioni introduttive dice, data per data, se
-una conferenza stampa si e' tenuta.
+## ECB calendar
 
-Questo e' il punto sulle seconde riunioni del mese nel 2000-2001: il Consiglio
-si riuniva due volte al mese, ma la conferenza seguiva solo la riunione di
-politica monetaria. Non esiste una regola di calendario che lo risolva. Nel 2000
-l'indice elenca 25 date di decisione e solo 13 dichiarazioni introduttive; nel
-2001 la riunione di politica monetaria di agosto e' quella del 30, non quella
-del 2. La presenza o assenza della dichiarazione per quella data e' la prova.
+The ECB publishes two indices that provide the required discrimination. The index of monetary policy decisions lists every decision of the Governing Council by year, and the archive of introductory statements states, date by date, whether a press conference took place.
+
+This matters for the second meetings of the month in 2000 and 2001, when the Governing Council met twice a month but the press conference followed only the monetary policy meeting. No calendar rule resolves the question. In 2000 the index lists 25 decision dates and only 13 introductory statements, and in 2001 the monetary policy meeting of August is that of the 30th and not that of the 2nd. The presence or absence of the statement for a given date is the evidence.
 
 ```bash
 bash Run_confirmation.sh calendar-candidates \
   --data-root "$HOME/Desktop/Monetary_surprises_FULL_rqjB5J/Econometrics_data" \
-  --output /percorso/uscita/ecb_calendar
+  --output /path/output/ecb_calendar
 ```
 
-Lo script scarica gli indici annuali 2000-2012 da
-`/press/govcdec/mopo/<anno>/html/index_include.en.html` e
-`/press/press_conference/monetary-policy-statement/<anno>/html/index_include.en.html`,
-risolve ogni comunicato elencato, verifica che la data pubblicata nella pagina
-(`article:published_time`, con la data stampata come riscontro) combaci con
-quella dell'indice, e archivia ogni pagina letta con il suo SHA-256. Calcola
-`event_datetime_utc` da 13:45 e 14:30 Europe/Berlin con fuso IANA, mai con un
-offset fisso. Infine riconcilia l'elenco BCE con le date di EA-EMPD.
+The script downloads the annual indices for 2000–2012 from `/press/govcdec/mopo/<year>/html/index_include.en.html` and `/press/press_conference/monetary-policy-statement/<year>/html/index_include.en.html`, resolves every listed release, checks that the date published on the page (`article:published_time`, with the printed date as a cross-check) matches that of the index, and archives every page read together with its SHA-256 hash. It computes `event_datetime_utc` from 13:45 and 14:30 Europe/Berlin with the IANA time zone, never with a fixed offset. Finally, it reconciles the ECB list with the EA-EMPD dates.
 
-### Cosa lo script non fa
+### Limits of the automated extraction
 
-Scrive `verification_status=candidate`, mai `verified`.
+It writes `verification_status=candidate`, never `verified`.
 
-**L'assenza di una pagina non e' prova dell'assenza dell'evento.** In venticinque
-anni il sito BCE ha cambiato struttura piu' volte e gli URL del 2000-2001 non
-hanno lo schema di oggi. Se un comunicato non si risolve, lo script non produce
-alcuna riga per quella data: la manda in coda di revisione come
-`unresolved_evidence`. Marcare `actual_phase_present=false` su un 404 avrebbe
-eliminato un'osservazione valida dal campione di conferma, in silenzio e senza
-che alcun test se ne accorgesse. L'errore opposto, includere una conferenza mai
-avvenuta, e' peggio.
+**The absence of a page is not evidence that the event did not occur.** Over twenty-five years the ECB website has changed structure several times, and the URLs of 2000–2001 do not follow today's scheme. If a release cannot be resolved, the script produces no row for that date and sends it to the review queue as `unresolved_evidence`. Marking `actual_phase_present=false` on a 404 response would have removed a valid observation from the confirmation sample silently, without any test detecting it, and the opposite error, including a press conference that never took place, is worse.
 
-Una data assente dall'indice annuale delle dichiarazioni e' invece un'assenza
-dichiarata dalla fonte, non un URL rotto: lo script la propone come
-`statement_absent_from_annual_index`, e quella proposta resta promuovibile solo
-riga per riga. Una promozione in blocco che incontri una proposta di assenza non
-revisionata si ferma con `UNREVIEWED_ABSENCE`.
+A date absent from the annual index of statements is instead an absence declared by the source and not a broken URL. The script proposes it as `statement_absent_from_annual_index`, and the proposal can only be promoted row by row. A bulk promotion that encounters an unreviewed proposed absence stops with `UNREVIEWED_ABSENCE`.
 
-Non deduce nulla dai picchi di volume, per lo stesso motivo per cui il resto
-della catena non lo fa: l'unica cosa che rende credibile un campione di conferma
-e' poter dire come si sa cio' che si afferma.
+The script infers nothing from volume peaks, for the same reason that the rest of the chain does not, since the only thing that makes a confirmation sample credible is the ability to state how each claim is known.
 
-### Cosa resta assunto
+### Assumptions on release times
 
-Le pagine BCE portano la **data** di un evento, non l'**ora**. Gli orari 13:45 e
-14:30 sono lo schedule regolare storico, non evidenza di pagina: la colonna
-`timestamp_basis` lo dichiara riga per riga e il report di prontezza tiene
-`external_window_timing` bloccante esattamente per questo. Le due deroghe note,
-17 settembre 2001 e 8 ottobre 2008, non ricevono alcun timestamp: chi revisiona
-deve fornirlo in `reviewer_event_datetime_utc`, altrimenti la promozione si
-ferma con `MISSING_TIMESTAMP`.
+The ECB pages carry the **date** of an event and not its **time**. The times 13:45 and 14:30 are the historical regular schedule and not page evidence, the column `timestamp_basis` declares this row by row, and the readiness report keeps `external_window_timing` blocking precisely for this reason. The two known exceptions, 17 September 2001 and 8 October 2008, receive no timestamp, so the reviewer must supply one in `reviewer_event_datetime_utc`, otherwise the promotion stops with `MISSING_TIMESTAMP`.
 
-### Uscite
+### Outputs
 
-| File | Contenuto |
+| File | Content |
 |---|---|
-| `ecb_calendar_candidates.csv` | Una riga per data e fase, con URL, stato HTTP, titolo, data estratta e frammento di testo su cui lo script ha deciso |
-| `ecb_pages.csv` | Ogni pagina risolta, con il suo hash e la classificazione del titolo |
-| `ecb_calendar_reconciliation.csv` | Elenco BCE contro EA-EMPD, con il tipo di discrepanza |
-| `ecb_calendar_review_queue.csv` | Le sole righe dove una decisione umana cambia il campione |
-| `pages/` | Archivio delle pagine lette; non entra nel repository |
+| `ecb_calendar_candidates.csv` | One row per date and phase, with URL, HTTP status, title, extracted date and the text fragment on which the script decided |
+| `ecb_pages.csv` | Every resolved page, with its hash and the classification of its title |
+| `ecb_calendar_reconciliation.csv` | The ECB list against EA-EMPD, with the type of discrepancy |
+| `ecb_calendar_review_queue.csv` | Only the rows where a human decision changes the sample |
+| `pages/` | Archive of the pages read, which does not enter the repository |
 
-### Revisione
+### Review
 
-La coda apre cinque strati, e nient'altro:
+The queue opens five layers and nothing else:
 
-- `timing_exception` — 17 settembre 2001 e 8 ottobre 2008;
-- `anomalous_weekday` — ogni data che non cade di giovedi', una per una;
-- `multiple_meetings_in_month_2000_2001` — i mesi del biennio con piu' di una
-  riunione, dove la decisione presente/assente cambia il campione;
-- `proposed_absence` — ogni conferenza proposta come assente;
-- `reconciliation_discrepancy` e `unresolved_evidence` — i disaccordi fra le due
-  liste e le pagine che non si sono risolte;
+- `timing_exception`, for 17 September 2001 and 8 October 2008;
+- `anomalous_weekday`, for every date that does not fall on a Thursday, one by one;
+- `multiple_meetings_in_month_2000_2001`, for the months of those two years with more than one meeting, where the decision on presence or absence changes the sample;
+- `proposed_absence`, for every press conference proposed as absent;
+- `reconciliation_discrepancy` and `unresolved_evidence`, for the disagreements between the two lists and the pages that could not be resolved;
 
-piu' un campione casuale di venti righe ordinarie, con seme fissato, per
-validare l'estrattore. Se quel campione e' pulito, il resto si promuove in
-blocco con una regola scritta:
+together with a random sample of twenty ordinary rows, drawn with a fixed seed, to validate the extractor. If that sample is clean, the remaining rows are promoted in bulk under a written rule:
 
 ```bash
 bash Run_confirmation.sh calendar-promote \
-  --candidates /percorso/uscita/ecb_calendar \
-  --reviewed-queue /percorso/coda_revisionata.csv \
+  --candidates /path/output/ecb_calendar \
+  --reviewed-queue /path/reviewed_queue.csv \
   --output .../Raw/Certification/ecb_calendar_verified_v2.csv \
   --reviewer "Francesco Pinna" \
-  --rule "Righe ordinarie promosse in blocco: comunicato e dichiarazione si risolvono sull'archivio BCE e la data pubblicata combacia con l'indice annuale. Ogni riga aperta e' stata revisionata singolarmente."
+  --rule "Ordinary rows promoted in bulk: release and statement resolve on the ECB archive and the published date matches the annual index. Every open row was reviewed individually."
 ```
 
-La promozione rifiuta una coda con anche una sola riga senza
-`reviewer_decision`, una riga senza revisore, una decisione diversa da
-`true`/`false`/`exclude`, una promozione senza nome e senza regola, e ogni
-assenza o evidenza irrisolta non revisionata singolarmente. Regola, revisore e
-hash della coda finiscono in `ecb_calendar_verified_v2_promotion.json`.
+The promotion rejects a queue with even one row lacking a `reviewer_decision`, a row without a reviewer, a decision other than `true`, `false` or `exclude`, a promotion without a name or a rule, and any absence or unresolved evidence that was not reviewed individually. The rule, the reviewer and the hash of the queue are recorded in `ecb_calendar_verified_v2_promotion.json`.
 
-Cinquanta righe aperte davvero invece di trecentosessantadue, e una regola
-documentata per il resto.
+Some fifty rows are genuinely opened for review, out of three hundred and sixty-two, and a documented rule covers the rest.
 
-## Semantica delle barre
+## Bar-label semantics
 
-Il test empirico ovvio - quale barra contiene il movimento dell'annuncio - e'
-circolare: usa l'annuncio per stabilire l'etichetta e poi l'etichetta per
-misurare l'annuncio.
+The obvious empirical test, which bar contains the movement of the announcement, is circular, because it uses the announcement to establish the label and then the label to measure the announcement.
 
-L'alternativa e' il confine di sessione, che con gli annunci non ha nulla a che
-fare. Si confrontano la prima e l'ultima barra osservata con l'orario di
-negoziazione Eurex pubblicato per quell'epoca. Se la sessione chiude alle 22:00
-e l'ultima barra e' etichettata 21:55, l'etichetta e' inizio intervallo; se
-l'ultima e' 22:00 e la prima e' una barra dopo l'apertura, e' fine intervallo.
-Un giorno che non corrisponde a nessuno dei due schemi resta inconcludente e non
-vota.
+The alternative is the session boundary, which has nothing to do with announcements. The first and last observed bars are compared with the Eurex trading hours published for the relevant period. If the session closes at 22:00 and the last bar is labelled 21:55, the label marks the start of the interval, and if the last bar is labelled 22:00 and the first one bar after the opening, it marks the end. A day that matches neither pattern is inconclusive and does not vote.
 
-L'unica cosa umana e' procurarsi lo schedule storico: una volta per epoca, non
-per file.
+The only human task is to obtain the historical schedule, once per period and not once per file.
 
 ```bash
 bash Run_confirmation.sh trading-hours-template --output config/eurex_trading_hours.csv
-# compilare a mano: root_code, period_start_date, period_end_date,
-# session_open_wall, session_close_wall, timezone, source_url, reviewer, notes
-
 bash Run_confirmation.sh bar-label-evidence \
-  --primary-files /percorso/confirmation_quality_RUN/quality/primary_files.csv \
+  --primary-files /path/confirmation_quality_RUN/quality/primary_files.csv \
   --schedule config/eurex_trading_hours.csv \
-  --output /percorso/uscita/bar_label
+  --output /path/output/bar_label
 ```
 
-Non esiste uno schedule di ripiego. Il caricatore rifiuta un file assente
-(`EUREX_SCHEDULE_MISSING`), il template vuoto (`EUREX_SCHEDULE_EMPTY`), un'epoca
-senza URL di fonte o senza revisore (`EUREX_SCHEDULE_UNSOURCED`), epoche
-sovrapposte (`EUREX_SCHEDULE_OVERLAP`) e piu' fusi orari nello stesso file. Un
-confine di sessione indovinato sceglierebbe in silenzio una convenzione di
-barra.
+The template is completed by hand with the fields `root_code`, `period_start_date`, `period_end_date`, `session_open_wall`, `session_close_wall`, `timezone`, `source_url`, `reviewer` and `notes`.
 
-Le date nello schedule si scrivono in formato ISO `YYYY-MM-DD`; `root_code`
-accetta `all` per un'epoca valida su tutte le radici.
+There is no fallback schedule. The loader rejects a missing file (`EUREX_SCHEDULE_MISSING`), the empty template (`EUREX_SCHEDULE_EMPTY`), a period without a source URL or without a reviewer (`EUREX_SCHEDULE_UNSOURCED`), overlapping periods (`EUREX_SCHEDULE_OVERLAP`) and more than one time zone in the same file, since a guessed session boundary would silently select a bar convention.
 
-La decisione si aggrega sulla cella (radice, periodo triennale) che l'audit di
-qualita' usa gia'. Una cella si chiude solo se tutti i giorni conclusivi
-concordano e sono almeno `--minimum-days`, venti per default; se i due schemi
-ricevono voti nella stessa cella il conflitto e' registrato e la cella resta
-aperta.
+Dates in the schedule are written in ISO format `YYYY-MM-DD`, and `root_code` accepts `all` for a period valid for every root.
+
+The decision is aggregated over the cell (root, three-year period) that the quality audit already uses. A cell is closed only if all conclusive days agree and number at least `--minimum-days`, twenty by default, and if both patterns receive votes within the same cell the conflict is recorded and the cell remains open.
 
 ```bash
 bash Run_confirmation.sh bar-label-promote \
-  --evidence /percorso/uscita/bar_label \
+  --evidence /path/output/bar_label \
   --output .../Raw/Certification/bar_label_evidence_v2.csv \
   --reviewer "Francesco Pinna" \
-  --rule "Celle i cui confini di sessione conclusivi concordano su una sola convenzione, su almeno venti giorni dello schedule Eurex pubblicato per l'epoca."
+  --rule "Cells whose conclusive session boundaries agree on a single convention, over at least twenty days of the Eurex schedule published for the period."
 ```
 
-L'uscita e' il file che `quality_audit` legge: una riga per cella, con la
-convenzione, l'URL dello schedule come fonte, il revisore e l'hash del file
-rappresentativo che lega l'evidenza all'inventario.
+The output is the file that `quality_audit` reads, with one row per cell recording the convention, the URL of the schedule as source, the reviewer and the hash of the representative file that ties the evidence to the inventory.
 
-Un test dimostra la non circolarita': cancellando ogni barra fra le 13:00 e le
-15:00 - cioe' tutta la finestra dell'annuncio - la decisione e il conteggio dei
-giorni a favore non cambiano.
+A test demonstrates the absence of circularity, since deleting every bar between 13:00 and 15:00, that is, the whole announcement window, changes neither the decision nor the number of days in its favour.
