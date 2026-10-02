@@ -1,2 +1,0 @@
-schema_version,raw_provider,raw_time_zone,event_time_zone,analysis_time_zone,cleaned_time_column,cleaned_time_semantics,bar_label_semantics,status,n_files,n_clean_rows,generated_at_utc
-timezone_v1,Barchart,America/Chicago,Europe/Berlin,UTC,Time,timezone-neutral datetime displaying UTC,provider label used as the five-minute return endpoint,complete,222,3293381,2026-09-11 15:21:25
