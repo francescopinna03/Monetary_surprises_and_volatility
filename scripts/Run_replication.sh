@@ -16,6 +16,30 @@ source "$state"
 export PYTHON_BIN="$python_bin"
 cd "$repo_dir"
 
+missing=""
+need_dir() { [[ -d "$1" ]] || missing="$missing    $2"$'\n'; }
+need_file() { [[ -f "$1" ]] || missing="$missing    $2"$'\n'; }
+for d in Barchart_futures Barchart_futures_confirmation Barchart_futures_1min Barchart_futures_fed ECB_calendar; do
+    need_dir "$data_root/Raw/$d" "Raw/$d"
+done
+for f in EA-EMPD/EA-EMPD.xlsx Certification/window_semantics_inputs.csv Certification/ecb_calendar_verified_v2.csv Certification/bar_label_evidence_v2.csv Certification/fomc_calendar_verified.csv; do
+    need_file "$data_root/Raw/$f" "Raw/$f"
+done
+if [[ -f "$data_root/Raw/Certification/window_semantics_inputs.csv" ]]; then
+    while IFS=, read -r role relative rest || [[ -n "$role" ]]; do
+        [[ "$role" == "role" || -z "$relative" ]] && continue
+        need_file "$data_root/$relative" "$relative"
+    done < "$data_root/Raw/Certification/window_semantics_inputs.csv"
+fi
+for f in Raw/Certification/fed_protocol_v1.json Raw/Certification/confirmation_decisions_v2.json Raw/Certification/final_analysis_spec_v1.json Raw/Certification/final_analysis_spec_v2.json reference_outputs/cross_epoch_20260916/inputs/analysis_protocol.json reference_outputs/cross_epoch_20260916/inputs/generation_harmonized_native_state.csv; do
+    need_file "$repo_dir/$f" "repository: $f"
+done
+if [[ -n "$missing" ]]; then
+    printf 'Missing inputs, nothing was run:\n%s' "$missing" >&2
+    exit 1
+fi
+echo "Preflight: every required input is present" | tee -a "$log"
+
 latest() {
     ls -dt $1 2>/dev/null | head -1
 }
@@ -51,6 +75,17 @@ keep() {
 
 finish_stage() {
     [[ "$dry_run" == "1" || "$skipped" == "1" ]] || record "DONE_$1" 1
+}
+
+cross_epoch_inputs() {
+    rm -rf "$data_root/Output/cross_epoch_inputs_replication"
+    "$python_bin" scripts/Prepare_cross_epoch_inputs.py --generation "$GENERATION_BUILD" --historical "$HISTORICAL_RUN" --bridge "$BRIDGE_DIR" --out "$data_root/Output/cross_epoch_inputs_replication"
+    cp "$repo_dir/reference_outputs/cross_epoch_20260916/inputs/analysis_protocol.json" "$data_root/Output/cross_epoch_inputs_replication/"
+}
+
+cross_epoch_checks() {
+    rm -rf "$data_root/Output/cross_epoch_replication"
+    "$python_bin" scripts/Run_cross_epoch_checks.py --inputs "$data_root/Output/cross_epoch_inputs_replication" --out "$data_root/Output/cross_epoch_replication"
 }
 
 stage data_stage bash scripts/Run_data_stage.sh "$data_root"
@@ -96,10 +131,10 @@ finish_stage minute
 stage design_information bash scripts/Run_design_information.sh "$facility" "${FROZEN:-FROZEN}"
 finish_stage design_information
 
-stage cross_epoch_inputs "$python_bin" scripts/Prepare_cross_epoch_inputs.py --generation "${GENERATION_BUILD:-GENERATION_BUILD}" --historical "${HISTORICAL_RUN:-HISTORICAL_RUN}" --bridge "${BRIDGE_DIR:-BRIDGE_DIR}" --out "$data_root/Output/cross_epoch_inputs_replication"
+stage cross_epoch_inputs cross_epoch_inputs
 finish_stage cross_epoch_inputs
 
-stage cross_epoch "$python_bin" scripts/Run_cross_epoch_checks.py --inputs "$data_root/Output/cross_epoch_inputs_replication" --out "$data_root/Output/cross_epoch_replication"
+stage cross_epoch cross_epoch_checks
 finish_stage cross_epoch
 
 stage fed_replication bash scripts/Run_fed_replication.sh "$facility"

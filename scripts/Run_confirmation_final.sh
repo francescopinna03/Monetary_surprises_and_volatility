@@ -63,6 +63,6 @@ opened_args=()
 [[ -n "$already_opened" ]] && opened_args+=(--already-opened "$already_opened")
 bash scripts/Run_confirmation.sh freeze --quality-dir "$quality_dir" --data-root "$data_root" \
     --build "$build_dir" --calibration "$calibration_dir" --bridge-dir "$bridge_dir" \
-    --destination "$frozen" "${opened_args[@]}"
+    --destination "$frozen" ${opened_args[@]+"${opened_args[@]}"}
 bash scripts/Run_confirmation.sh estimate --build "$frozen" --output "$out/estimated"
 printf '\nStima v2 completata. Build congelata: %s\n' "$frozen"

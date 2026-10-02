@@ -46,7 +46,7 @@ The whole sequence below runs with one command, which records the paths produced
 bash scripts/Run_replication.sh FACILITY I_HAVE_REVIEWED_THE_FROZEN_SPECIFICATION
 ```
 
-Its progress is written to `Output/replication.log` and its state to `Output/replication_state.env`, and `DRY_RUN=1` prints the commands without executing them.
+Before running anything, it checks that every required input is present and lists all the missing ones at once. Besides the market data, the data directory must contain in `Raw/Certification` the verified ECB and FOMC calendars, the bar-label evidence, and the window-semantics manifest `window_semantics_inputs.csv` together with the three FXU23 export files it lists. Its progress is written to `Output/replication.log` and its state to `Output/replication_state.env`, and `DRY_RUN=1` prints the commands without executing them.
 
 ## Stages
 
