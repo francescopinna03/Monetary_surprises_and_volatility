@@ -14,11 +14,11 @@ The ECB sample of 2013–2025 generated the original design and was never a conf
 
 ## The FOMC protocol
 
-The protocol `Raw/Certification/fed_protocol_v1.json` was signed on 29 September 2026, after the release times had been checked against the reaction of the two coordinates and the bar counts of every window had been tallied, and before any post-window price of the ten-year contract had been read. It was amended once, after its first signature and before it was committed or any run took place. The amendment rewrote F3, which in its first version stated only that the elasticity is below one and would therefore have been satisfied by a null effect, as an intersection–union test of a positive elasticity below one, added the completeness rule and set the review date in ISO format. The replication was run once under the committed protocol, whose hash, `296e6acb9bedc40e4f3f9254a66d39d44f3559e853f31f0a7d173ef4759a25a9`, is recorded in its manifest.
+The protocol `Raw/Certification/fed_protocol_v1.json` was signed on 29 September 2026, after the release times had been checked against the reaction of the two coordinates and the bar counts of every window had been tallied, and before any post-window price of the ten-year contract had been read. It was amended once, after its first signature and before it was committed or any run took place. The amendment rewrote F3, which in its first version stated only that the elasticity is below one and would therefore have been satisfied by a null effect, as an intersection–union test of a positive elasticity below one, added the completeness rule and set the review date in ISO format. The replication was run once under the committed protocol on the calendar certified on 29 September 2026, and once more under the same protocol and code after the correction of the calendar on 5 October 2026, described in `records/FOMC_CALENDAR_CORRECTION_20261005.md`. The hash of the protocol, `296e6acb9bedc40e4f3f9254a66d39d44f3559e853f31f0a7d173ef4759a25a9`, is recorded in both manifests.
 
 ## Runs and archived outputs
 
-The runs were executed in a private development repository. Their aggregate outputs and manifests are archived in `reference_outputs/paper` and `reference_outputs/cross_epoch_20260916`, with event-level panels excluded. Each manifest records the development commit, the hashes of the executed code and of the inputs, and the versions of the numerical libraries.
+The runs up to 30 September 2026 were executed in a private development repository, and those of 5 October 2026 from this repository. Their aggregate outputs and manifests are archived in `reference_outputs/paper` and `reference_outputs/cross_epoch_20260916`, with event-level panels excluded. Each manifest records the development commit, the hashes of the executed code and of the inputs, and the versions of the numerical libraries.
 
 | Run | Date | Archive | Status |
 |---|---|---|---|
@@ -26,9 +26,14 @@ The runs were executed in a private development repository. Their aggregate outp
 | Cross-period comparison | 16 September 2026 | `cross_epoch_20260916` | Post-opening |
 | One-minute outcomes | 28 September 2026 | `ecb_minute_20260928` | Post-opening |
 | Radial exponent and sector information | 28 September 2026 | `ecb_design_information_20260928` | Post-opening |
-| FOMC replication | 29 September 2026 | `fomc_replication_20260929` | Pre-registered |
-| FOMC post-replication decomposition | 30 September 2026 | `fomc_post_replication_20260930` | Descriptive |
-| Measurement-error check | 30 September 2026 | `measurement_check_20260930` | Post-opening |
+| FOMC replication | 29 September 2026 | `fomc_replication_20260929` | Pre-registered, calendar before correction |
+| FOMC post-replication decomposition | 30 September 2026 | `fomc_post_replication_20260930` | Descriptive, calendar before correction |
+| Measurement-error check | 30 September 2026 | `measurement_check_20260930` | Post-opening, calendar before correction |
+| FOMC replication | 5 October 2026 | `fomc_replication_20261005` | Pre-registered, corrected calendar |
+| FOMC post-replication decomposition | 5 October 2026 | `fomc_post_replication_20261005` | Descriptive, corrected calendar |
+| Measurement-error check | 5 October 2026 | `measurement_check_20261005` | Post-opening, corrected calendar |
+
+The paper reports the runs of 5 October 2026. The FOMC runs of 29 and 30 September 2026 remain archived as the record of the calendar in force when the protocol was signed.
 
 The code published here is the code of the development repository at the state of 30 September 2026, with comments removed from newly added files and the runners moved into `scripts/`. Because the integrity guards described below compare byte-level hashes, the manifest hashes refer to the development files and not to the published ones. Reproduction is verified on the results instead: rerunning the FOMC replication from this repository on the same inputs reproduces the archived family of tests exactly, and `scripts/Make_paper_tables.py` reproduces every number in the tables of the paper from the archived outputs.
 

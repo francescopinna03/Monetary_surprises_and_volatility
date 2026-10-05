@@ -8,9 +8,9 @@ ARCHIVE = REPO/'reference_outputs'
 RUNS = [('paper/ecb_confirmation_20260915', 'confirmation_final_', 'estimated'),
         ('paper/ecb_minute_20260928', 'confirmation_minute_', 'minute'),
         ('paper/ecb_design_information_20260928', 'design_information_', 'design'),
-        ('paper/fomc_replication_20260929', 'fed_replication_', 'fed'),
-        ('paper/fomc_post_replication_20260930', 'fed_post_replication_', 'post'),
-        ('paper/measurement_check_20260930', 'measurement_check_', 'check')]
+        ('paper/fomc_replication_20261005', 'fed_replication_', 'fed'),
+        ('paper/fomc_post_replication_20261005', 'fed_post_replication_', 'post'),
+        ('paper/measurement_check_20261005', 'measurement_check_', 'check')]
 
 
 def latest(output, prefix, sub):

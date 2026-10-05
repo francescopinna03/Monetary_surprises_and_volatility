@@ -10,8 +10,8 @@ This repository reproduces the empirical results of the working paper of the sam
 | A surface growing with the amplitude predicts held-out years better than the quadratic surface, and an exponent of two is excluded | ECB and FOMC | Found after opening |
 | Once the amplitude is instrumented with an independent measurement, the elasticity of variance lies near one and that of volume near one half | ECB | Found after opening |
 | F1, positive coefficient on the magnitude of the two-year surprise | FOMC, 2008–2026 | Pre-registered, confirmed, Holm-adjusted p = 0.001 |
-| F2, positive coefficient on the magnitude of the equity surprise | FOMC, 2008–2026 | Pre-registered, confirmed, Holm-adjusted p = 0.009 |
-| F3, elasticity strictly between zero and one | FOMC, 2008–2026 | Pre-registered, not confirmed, p = 0.079 |
+| F2, positive coefficient on the magnitude of the equity surprise | FOMC, 2008–2026 | Pre-registered, confirmed, Holm-adjusted p = 0.010 |
+| F3, elasticity strictly between zero and one | FOMC, 2008–2026 | Pre-registered, not confirmed, p = 0.073 |
 | Ordering of pure-policy and information surprises at comparable amplitude | ECB and FOMC | Not identified; the FOMC contrast is a tight null |
 
 ## Repository layout
