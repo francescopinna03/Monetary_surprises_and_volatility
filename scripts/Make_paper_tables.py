@@ -26,7 +26,7 @@ def mean_branch(out):
     for key, lab in [('historical_native', 'ECB 2000--2012'), ('generation_harmonized_native_state', 'ECB 2013--2025')]:
         m = pd.read_csv(CROSS/key/'mean_branch_with_equity.csv').set_index('term')
         rows.append([lab, f(m.loc['abs_u', 'estimate']), f(m.loc['abs_u', 'p_wild']), f(m.loc['abs_z', 'estimate']), f(m.loc['abs_z', 'p_wild']), f(m.loc['u', 'p_wild']), f(m.loc['z', 'p_wild'])])
-    r = pd.read_csv(PAPER/'fomc_replication_20260929'/'fed_mean_branch.csv')
+    r = pd.read_csv(PAPER/'fomc_replication_20261005'/'fed_mean_branch.csv')
     r = r[r.measure.eq('BV') & r.period.eq('all')].iloc[0]
     rows.append(['FOMC 2008--2026', f(r.abs_u_estimate), f(r.abs_u_p_wild), f(r.abs_z_estimate), f(r.abs_z_p_wild), f(r.u_p_wild), f(r.z_p_wild)])
     write(out, 'meanbranch', ['Sample', '$|u|$', '$p$', '$|z|$', '$p$', '$p$ for $u$', '$p$ for $z$'], rows,
@@ -38,7 +38,7 @@ def basis(out):
     for key, lab in [('historical_native', 'ECB 2000--2012'), ('generation_harmonized_native_state', 'ECB 2013--2025')]:
         b = pd.read_csv(CROSS/key/'basis_summary.csv').iloc[0]
         rows.append([lab, f(b.mean_mse_degree2), f(b.mean_mse_degree1), f(b.mean_mse_quadratic_angles_radial1), f'{int(b.folds_won_by_degree1)}/{int(b.n_folds)}'])
-    b = pd.read_csv(PAPER/'fomc_replication_20260929'/'fed_basis_summary.csv')
+    b = pd.read_csv(PAPER/'fomc_replication_20261005'/'fed_basis_summary.csv')
     b = b[b.measure.eq('BV')].iloc[0]
     rows.append(['FOMC 2008--2026', f(b.mean_mse_degree2), f(b.mean_mse_degree1), f(b.mean_mse_quadratic_angles_radial1), f'{int(b.folds_won_by_degree1)}/{int(b.n_folds)}'])
     write(out, 'basis', ['Sample', 'Quadratic, $r^2$', 'Absolute, $r$', 'Quadratic angles, $r$', 'Years won by $r$'], rows,
@@ -61,8 +61,8 @@ def minute(out):
 
 def exponent_and_elasticity(out):
     e = pd.read_csv(PAPER/'ecb_design_information_20260928'/'radial_exponent_profile.csv').assign()
-    fe = pd.read_csv(PAPER/'fomc_replication_20260929'/'fed_radial_exponent_profile.csv').assign(sample='FED_2008_2026')
-    mc = pd.read_csv(PAPER/'measurement_check_20260930'/'measurement_check.csv').set_index(['sample', 'measure'])
+    fe = pd.read_csv(PAPER/'fomc_replication_20261005'/'fed_radial_exponent_profile.csv').assign(sample='FED_2008_2026')
+    mc = pd.read_csv(PAPER/'measurement_check_20261005'/'measurement_check.csv').set_index(['sample', 'measure'])
     spec = [('H_2000_2012', 'BV'), ('H_2000_2012', 'BV_excl5'), ('H_2000_2012', 'VOL'), ('G_2013_2025', 'BV'), ('G_2013_2025', 'BV_excl5'), ('G_2013_2025', 'VOL'), ('FED_2008_2026', 'BV'), ('FED_2008_2026', 'VOL')]
     rows_e, rows_l = [], []
     for smp, meas in spec:
@@ -81,7 +81,7 @@ def exponent_and_elasticity(out):
 
 def measurement(out):
     rows = []
-    for r in pd.read_csv(PAPER/'measurement_check_20260930'/'measurement_check.csv').itertuples():
+    for r in pd.read_csv(PAPER/'measurement_check_20261005'/'measurement_check.csv').itertuples():
         need = 'none on the grid' if not np.isfinite(r.noise_multiple_needed) else f(r.noise_multiple_needed, 2)
         rows.append([LABELS[r.sample], r.measure.replace('_', ' '), str(int(r.n_tail)), f(r.exponent_tail, 2), f(r.lr_at_1_tail, 2), f(r.observed_exponent, 2), need, r.verdict.replace('_', ' ')])
     write(out, 'measurement', ['Sample', 'Measure', '$n$ tail', 'Tail $\\hat p$', 'LR at 1', 'Full $\\hat p$', 'Noise multiple needed', 'Verdict'], rows,
@@ -89,7 +89,7 @@ def measurement(out):
 
 
 def fomc(out):
-    d = PAPER/'fomc_replication_20260929'
+    d = PAPER/'fomc_replication_20261005'
     rows = [[r.id, f(r.estimate), f(r.p_one_sided, 4), f(r.p_holm, 4), 'yes' if r.rejected_at_5pct else 'no'] for r in pd.read_csv(d/'fed_primary_family.csv').itertuples()]
     write(out, 'fedfamily', ['Test', 'Estimate', 'One-sided $p$', 'Holm $p$', 'Rejected at 5\\%'], rows, 'Pre-registered family on the FOMC sample.', 'tab:fedfamily')
     fm = pd.read_csv(d/'fed_mean_branch.csv'); rows = []
@@ -99,13 +99,13 @@ def fomc(out):
             rows.append([meas if per == 'all' else '', per.replace('_', ' '), str(int(r.n_events)), f(r.abs_u_estimate), f(r.abs_u_p_wild), f(r.abs_z_estimate), f(r.abs_z_p_wild)])
     write(out, 'feddesc', ['Measure', 'Period', '$n$', '$|u|$', '$p$', '$|z|$', '$p$'], rows, 'FOMC sample, descriptive mean branch by measure and period.', 'tab:feddesc')
     rows = [[r.measure, str(int(r.n_events)), f(r.abs_u_estimate), f(r.abs_u_p_wild), f(r.abs_z_estimate), f(r.abs_z_p_wild)]
-            for r in pd.read_csv(PAPER/'fomc_post_replication_20260930'/'fed_post_replication_split.csv').itertuples()]
+            for r in pd.read_csv(PAPER/'fomc_post_replication_20261005'/'fed_post_replication_split.csv').itertuples()]
     write(out, 'fedpost', ['Measure', '$n$', '$|u|$', '$p$', '$|z|$', '$p$'], rows, 'FOMC sample, post-replication split of the window.', 'tab:fedpost')
 
 
 def sector_and_symmetry(out):
     si = pd.read_csv(PAPER/'ecb_design_information_20260928'/'sector_contrast_information.csv')
-    fs = pd.read_csv(PAPER/'fomc_replication_20260929'/'fed_sector_contrast_information.csv').assign(sample='FED_2008_2026')
+    fs = pd.read_csv(PAPER/'fomc_replication_20261005'/'fed_sector_contrast_information.csv').assign(sample='FED_2008_2026')
     rows = []
     for df, smp in [(si, 'H_2000_2012'), (si, 'G_2013_2025'), (fs, 'FED_2008_2026')]:
         q = df[df['sample'].eq(smp) & df.measure.eq('BV') & df.angular_basis.eq('quadratic_angles') & df.radial_exponent.eq(1.0)].iloc[0]
@@ -113,7 +113,7 @@ def sector_and_symmetry(out):
     write(out, 'sector', ['Sample', '$n$ policy', '$n$ information', 'Policy minus information', 'SE', 'Retention', 'Meetings for 80\\% power'], rows,
           'Sector contrast at unit amplitude and the meetings required to detect it.', 'tab:sector')
     od = pd.read_csv(PAPER/'ecb_design_information_20260928'/'central_symmetry_odd_block.csv')
-    fo = pd.read_csv(PAPER/'fomc_replication_20260929'/'fed_central_symmetry_odd_block.csv').assign(sample='FED_2008_2026')
+    fo = pd.read_csv(PAPER/'fomc_replication_20261005'/'fed_central_symmetry_odd_block.csv').assign(sample='FED_2008_2026')
     rows = [[LABELS[r.sample], r.measure.replace('_', ' '), str(int(r.n_events)), f(r.partial_r2_odd_block), f(r.p_wild_joint_odd_block)] for r in pd.concat([od, fo]).itertuples()]
     write(out, 'odd', ['Sample', 'Measure', '$n$', 'Partial $R^2$ of signed block', 'Joint wild $p$'], rows, 'Central symmetry.', 'tab:odd')
     jd = pd.read_csv(PAPER/'ecb_minute_20260928'/'minute_jump_descriptives.csv')
@@ -142,7 +142,7 @@ def figures(out, event_panels):
     import matplotlib.pyplot as plt
     plt.rcParams.update({'font.size': 9, 'font.family': 'serif'})
     ch = pd.read_csv(PAPER/'ecb_design_information_20260928'/'radial_exponent_curves.csv')
-    cf = pd.read_csv(PAPER/'fomc_replication_20260929'/'fed_radial_exponent_curves.csv')
+    cf = pd.read_csv(PAPER/'fomc_replication_20261005'/'fed_radial_exponent_curves.csv')
     fig, ax = plt.subplots(figsize=(5.2, 3.0))
     for lab, c in [('ECB 2000--2012', ch[ch['sample'].eq('H_2000_2012') & ch.measure.eq('BV') & ch.angular_basis.eq('quadratic_angles')]),
                    ('ECB 2013--2025', ch[ch['sample'].eq('G_2013_2025') & ch.measure.eq('BV') & ch.angular_basis.eq('quadratic_angles')]),
@@ -150,8 +150,8 @@ def figures(out, event_panels):
         ax.plot(c.exponent, c.lr, label=lab, lw=1.2)
     ax.axhline(3.84, color='0.5', lw=.8, ls='--'); ax.set_ylim(0, 30); ax.set_xlabel('radial exponent'); ax.set_ylabel('likelihood ratio'); ax.legend(frameon=False, fontsize=7)
     plt.tight_layout(); plt.savefig(out/'fig_exponent.pdf'); plt.close()
-    g = pd.read_csv(PAPER/'measurement_check_20260930'/'measurement_simulation_grid.csv')
-    mc = pd.read_csv(PAPER/'measurement_check_20260930'/'measurement_check.csv').set_index(['sample', 'measure'])
+    g = pd.read_csv(PAPER/'measurement_check_20261005'/'measurement_simulation_grid.csv')
+    mc = pd.read_csv(PAPER/'measurement_check_20261005'/'measurement_check.csv').set_index(['sample', 'measure'])
     fig, ax = plt.subplots(figsize=(5.2, 3.0))
     for smp in ['H_2000_2012', 'G_2013_2025', 'FED_2008_2026']:
         x = g[g['sample'].eq(smp) & g.measure.eq('BV') & g.status.eq('simulated')]
