@@ -17,3 +17,4 @@ The records in `records/` document decisions and results at the time they were m
 | 30 September 2026 | FOMC post-replication decomposition and measurement-error check | |
 | 2 October 2026 | Publication of the code and reorganization of the repository around the paper | |
 | 5 October 2026 | Correction of the FOMC calendar after a cross-check against USMPD and the dates of Bauer and Swanson, and rerun of the three FOMC stages | `FOMC_CALENDAR_CORRECTION_20261005.md` |
+| 9 November 2026 | One-minute outcomes on the FOMC sample, after the pre-registered replication | |

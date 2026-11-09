@@ -18,7 +18,7 @@ The protocol `Raw/Certification/fed_protocol_v1.json` was signed on 29 September
 
 ## Runs and archived outputs
 
-The runs up to 30 September 2026 were executed in a private development repository, and those of 5 October 2026 from this repository. Their aggregate outputs and manifests are archived in `reference_outputs/paper` and `reference_outputs/cross_epoch_20260916`, with event-level panels excluded. Each manifest records the development commit, the hashes of the executed code and of the inputs, and the versions of the numerical libraries.
+The runs up to 30 September 2026 were executed in a private development repository, and those of 5 October and 9 November 2026 from this repository. Their aggregate outputs and manifests are archived in `reference_outputs/paper` and `reference_outputs/cross_epoch_20260916`, with event-level panels excluded. Each manifest records the development commit, the hashes of the executed code and of the inputs, and the versions of the numerical libraries.
 
 | Run | Date | Archive | Status |
 |---|---|---|---|
@@ -32,6 +32,7 @@ The runs up to 30 September 2026 were executed in a private development reposito
 | FOMC replication | 5 October 2026 | `fomc_replication_20261005` | Pre-registered, corrected calendar |
 | FOMC post-replication decomposition | 5 October 2026 | `fomc_post_replication_20261005` | Descriptive, corrected calendar |
 | Measurement-error check | 5 October 2026 | `measurement_check_20261005` | Post-opening, corrected calendar |
+| FOMC one-minute outcomes | 9 November 2026 | `fed_minute_20261109` | Descriptive, after the pre-registered replication, corrected calendar |
 
 The paper reports the runs of 5 October 2026. The FOMC runs of 29 and 30 September 2026 remain archived as the record of the calendar in force when the protocol was signed.
 
