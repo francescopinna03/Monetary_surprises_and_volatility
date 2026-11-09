@@ -153,6 +153,9 @@ finish_stage fed_minute
 stage measurement_check bash scripts/Run_measurement_check.sh "$facility" "${FROZEN:-FROZEN}"
 finish_stage measurement_check
 
+stage placebo bash scripts/Run_placebo.sh "$facility" "${FROZEN:-FROZEN}"
+finish_stage placebo
+
 stage comparison "$python_bin" scripts/Compare_with_archive.py --data-root "$data_root" --cross-epoch "$data_root/Output/cross_epoch_replication"
 finish_stage comparison
 

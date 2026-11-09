@@ -11,7 +11,8 @@ RUNS = [('paper/ecb_confirmation_20260915', 'confirmation_final_', 'estimated'),
         ('paper/fomc_replication_20261005', 'fed_replication_', 'fed'),
         ('paper/fomc_post_replication_20261005', 'fed_post_replication_', 'post'),
         ('paper/fed_minute_20261109', 'fed_minute_', 'minute'),
-        ('paper/measurement_check_20261005', 'measurement_check_', 'check')]
+        ('paper/measurement_check_20261005', 'measurement_check_', 'check'),
+        ('paper/placebo_20261109', 'placebo_', 'placebo')]
 
 
 def latest(output, prefix, sub):

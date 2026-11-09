@@ -1,0 +1,5 @@
+sample_measure,reference_events,max_abs_difference
+FED_2008_2026 BV,131,0.0
+FED_2008_2026 VOL,137,0.0
+G_2013_2025 BV5_frozen,111,0.0
+H_2000_2012 BV5_frozen,160,7.513989430663059e-13

@@ -71,9 +71,10 @@ The stages run in the order below. Each runner writes into a new timestamped dir
 | 13. FOMC post-replication decomposition | `scripts/Run_fed_post_replication.sh` | Table 10 |
 | 14. One-minute FOMC outcomes | `scripts/Run_fed_minute.sh` | One-minute robustness table of the FOMC sample |
 | 15. Measurement-error check | `scripts/Run_measurement_check.sh` | Tables 6 and 7, Figure 3 |
-| 16. Tables and figures | `python3 scripts/Make_paper_tables.py --output tables` | All tables and figures |
+| 16. Placebo against control days | `scripts/Run_placebo.sh` | Comparison of announcement days with control days |
+| 17. Tables and figures | `python3 scripts/Make_paper_tables.py --output tables` | All tables and figures |
 
-Stages 6 to 15 take the facility directory as their first argument and, where relevant, the frozen 2000–2012 build or an earlier run, which they otherwise locate as the most recent one in `Output`. The runners of stages 3, 4, 9, 10 and 15 also require two environment variables, `GENERATION_BUILD`, the build produced by stage 2, and `BRIDGE_DIR`, the `bridge` directory produced by stage 3, and they stop if either is missing. After the last stage, `python3 scripts/Compare_with_archive.py --data-root DATA_ROOT --cross-epoch CROSS_EPOCH_OUTPUT` compares every table produced by the replication with the archived one and reports the largest absolute difference. Stage 16 reads the archived outputs in `reference_outputs`. The central figure additionally requires the FOMC event panel, which is passed with `--event-panels` because event-level data are not distributed.
+Stages 6 to 16 take the facility directory as their first argument and, where relevant, the frozen 2000–2012 build or an earlier run, which they otherwise locate as the most recent one in `Output`. The runners of stages 3, 4, 9, 10, 15 and 16 also require two environment variables, `GENERATION_BUILD`, the build produced by stage 2, and `BRIDGE_DIR`, the `bridge` directory produced by stage 3, and they stop if either is missing. After the last stage, `python3 scripts/Compare_with_archive.py --data-root DATA_ROOT --cross-epoch CROSS_EPOCH_OUTPUT` compares every table produced by the replication with the archived one and reports the largest absolute difference. Stage 16 reads the archived outputs in `reference_outputs`. The central figure additionally requires the FOMC event panel, which is passed with `--event-panels` because event-level data are not distributed.
 
 ## Stages of the FOMC replication
 
