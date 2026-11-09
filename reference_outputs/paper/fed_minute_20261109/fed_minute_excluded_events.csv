@@ -1,0 +1,7 @@
+day,clock,contract,n_post_bars,filled_post_endpoints,reason
+2014-01-29,14:00,znh14,25,0,continuation_undefined
+2015-03-18,14:00,znm15,20,5,post_window_incomplete_at_one_minute
+2015-04-29,14:00,znm15,2,5,post_window_incomplete_at_one_minute
+2016-04-27,14:00,znm16,25,0,continuation_undefined
+2021-03-17,14:00,znm21,25,0,continuation_undefined
+2025-06-18,14:00,znu25,25,0,continuation_undefined

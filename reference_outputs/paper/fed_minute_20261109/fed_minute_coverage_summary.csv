@@ -1,0 +1,7 @@
+is_event,coverage_status,n
+False,complete,5281
+False,contract_not_downloaded,9
+False,empty,210
+False,stale_or_partial,13
+True,complete,137
+True,stale_or_partial,1

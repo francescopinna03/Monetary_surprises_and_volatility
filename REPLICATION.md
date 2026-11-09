@@ -18,6 +18,7 @@ The market data are not distributed with this repository, because the licence of
 | Barchart, five-minute bars on expired contracts | Euro-Schatz (`hf`), Euro-Bobl (`hr`), Euro-Bund (`gg`) and EURO STOXX 50 (`fx`) futures, 2000–2026 | Outcomes and aligned coordinates of the ECB samples |
 | Barchart, one-minute bars on expired contracts | Euro-Bund futures, 2000–2026, in slices of at most 20,000 rows | One-minute outcomes of the ECB samples |
 | Barchart, five-minute bars on expired contracts | Ten-year Treasury note (`zn`), two-year Treasury note (`zt`) and E-mini S&P 500 (`es`) futures, December 2008 to 2026 | Outcome and coordinates of the FOMC sample |
+| Barchart, one-minute bars on expired contracts | Ten-year Treasury note futures, December 2008 to 2026, in slices of at most 20,000 rows | One-minute outcomes of the FOMC sample |
 | Euro Area Monetary Policy event-study Database (EA-EMPD) | Changes in OIS rates, sovereign yields and equity indices over the press-release and press-conference windows of every Governing Council meeting | Equity coordinate of the ECB samples and the instrument for the policy coordinate |
 
 Every runner receives a facility directory as its first argument and expects the data under `Econometrics_data` inside it, together with a Python environment in `python_env`.
@@ -29,6 +30,7 @@ Econometrics_data/
 │   ├── Barchart_futures_confirmation/    five-minute files of the 2000–2012 contracts
 │   ├── Barchart_futures_1min/            one-minute Bund slices
 │   ├── Barchart_futures_fed/             five-minute zn, zt and es files
+│   ├── Barchart_futures_fed_1min/        one-minute zn slices
 │   ├── EA-EMPD/                          EA-EMPD.xlsx
 │   ├── ECB_calendar/                     ECB event calendar
 │   ├── FOMC_calendar/pages/              cache of the Board pages
@@ -67,10 +69,11 @@ The stages run in the order below. Each runner writes into a new timestamped dir
 | 11. FOMC calendar | `scripts/Run_fomc_calendar.sh` | Verified FOMC calendar |
 | 12. FOMC replication | `scripts/Run_fed_replication.sh` | Tables 8 and 9 |
 | 13. FOMC post-replication decomposition | `scripts/Run_fed_post_replication.sh` | Table 10 |
-| 14. Measurement-error check | `scripts/Run_measurement_check.sh` | Tables 6 and 7, Figure 3 |
-| 15. Tables and figures | `python3 scripts/Make_paper_tables.py --output tables` | All tables and figures |
+| 14. One-minute FOMC outcomes | `scripts/Run_fed_minute.sh` | One-minute robustness table of the FOMC sample |
+| 15. Measurement-error check | `scripts/Run_measurement_check.sh` | Tables 6 and 7, Figure 3 |
+| 16. Tables and figures | `python3 scripts/Make_paper_tables.py --output tables` | All tables and figures |
 
-Stages 6 to 14 take the facility directory as their first argument and, where relevant, the frozen 2000–2012 build or an earlier run, which they otherwise locate as the most recent one in `Output`. The runners of stages 3, 4, 9, 10 and 14 also require two environment variables, `GENERATION_BUILD`, the build produced by stage 2, and `BRIDGE_DIR`, the `bridge` directory produced by stage 3, and they stop if either is missing. After the last stage, `python3 scripts/Compare_with_archive.py --data-root DATA_ROOT --cross-epoch CROSS_EPOCH_OUTPUT` compares every table produced by the replication with the archived one and reports the largest absolute difference. Stage 15 reads the archived outputs in `reference_outputs`. The central figure additionally requires the FOMC event panel, which is passed with `--event-panels` because event-level data are not distributed.
+Stages 6 to 15 take the facility directory as their first argument and, where relevant, the frozen 2000–2012 build or an earlier run, which they otherwise locate as the most recent one in `Output`. The runners of stages 3, 4, 9, 10 and 15 also require two environment variables, `GENERATION_BUILD`, the build produced by stage 2, and `BRIDGE_DIR`, the `bridge` directory produced by stage 3, and they stop if either is missing. After the last stage, `python3 scripts/Compare_with_archive.py --data-root DATA_ROOT --cross-epoch CROSS_EPOCH_OUTPUT` compares every table produced by the replication with the archived one and reports the largest absolute difference. Stage 16 reads the archived outputs in `reference_outputs`. The central figure additionally requires the FOMC event panel, which is passed with `--event-panels` because event-level data are not distributed.
 
 ## Stages of the FOMC replication
 

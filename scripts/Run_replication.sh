@@ -19,7 +19,7 @@ cd "$repo_dir"
 missing=""
 need_dir() { [[ -d "$1" ]] || missing="$missing    $2"$'\n'; }
 need_file() { [[ -f "$1" ]] || missing="$missing    $2"$'\n'; }
-for d in Barchart_futures Barchart_futures_confirmation Barchart_futures_1min Barchart_futures_fed ECB_calendar; do
+for d in Barchart_futures Barchart_futures_confirmation Barchart_futures_1min Barchart_futures_fed Barchart_futures_fed_1min ECB_calendar; do
     need_dir "$data_root/Raw/$d" "Raw/$d"
 done
 for f in EA-EMPD/EA-EMPD.xlsx Certification/window_semantics_inputs.csv Certification/ecb_calendar_verified_v2.csv Certification/bar_label_evidence_v2.csv Certification/fomc_calendar_verified.csv; do
@@ -146,6 +146,9 @@ finish_stage fed_replication
 
 stage fed_post_replication bash scripts/Run_fed_post_replication.sh "$facility"
 finish_stage fed_post_replication
+
+stage fed_minute bash scripts/Run_fed_minute.sh "$facility"
+finish_stage fed_minute
 
 stage measurement_check bash scripts/Run_measurement_check.sh "$facility" "${FROZEN:-FROZEN}"
 finish_stage measurement_check
