@@ -79,8 +79,8 @@ finish_stage() {
 
 cross_epoch_inputs() {
     mkdir -p "$HISTORICAL_RUN/frozen_manifest"
-    for name in status.json specification.json decisions.json; do
-        if [[ ! -f "$HISTORICAL_RUN/frozen_manifest/$name" && -f "$FROZEN/$name" ]]; then cp "$FROZEN/$name" "$HISTORICAL_RUN/frozen_manifest/$name"; fi
+    for manifest_file in status.json specification.json decisions.json; do
+        if [[ ! -f "$HISTORICAL_RUN/frozen_manifest/$manifest_file" && -f "$FROZEN/$manifest_file" ]]; then cp "$FROZEN/$manifest_file" "$HISTORICAL_RUN/frozen_manifest/$manifest_file"; fi
     done
     rm -rf "$data_root/Output/cross_epoch_inputs_replication"
     "$python_bin" scripts/Prepare_cross_epoch_inputs.py --generation "$GENERATION_BUILD" --historical "$HISTORICAL_RUN" --bridge "$BRIDGE_DIR" --out "$data_root/Output/cross_epoch_inputs_replication"

@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper below."
+title: "Replication package for The Amplitude of Monetary Surprises and the Intraday Volatility of Government Bond Futures"
+authors:
+  - family-names: Pinna
+    given-names: Francesco
+    affiliation: "LUISS Guido Carli"
+license: MIT
+repository-code: "https://github.com/francescopinna03/Monetary_surprises_and_volatility"
+type: software
+preferred-citation:
+  type: report
+  title: "The Amplitude of Monetary Surprises and the Intraday Volatility of Government Bond Futures"
+  authors:
+    - family-names: Pinna
+      given-names: Francesco
+      affiliation: "LUISS Guido Carli"
+  institution:
+    name: "LUISS Guido Carli"
+  year: 2026
+  month: 10
+  url: "https://github.com/francescopinna03/Monetary_surprises_and_volatility"

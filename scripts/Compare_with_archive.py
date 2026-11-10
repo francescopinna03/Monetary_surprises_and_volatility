@@ -30,7 +30,10 @@ def compare_csv(a, b, tol):
             u, v = x[c].to_numpy(float), y[c].to_numpy(float)
             if not np.array_equal(np.isnan(u), np.isnan(v)):
                 return False, f'missing values differ in {c}'
-            d = np.abs(u-v)[~np.isnan(u)]
+            if not np.array_equal(np.isinf(u), np.isinf(v)) or not np.array_equal(u[np.isinf(u)], v[np.isinf(v)]):
+                return False, f'infinite values differ in {c}'
+            finite = np.isfinite(u)
+            d = np.abs(u[finite]-v[finite])
             worst = max(worst, float(d.max()) if d.size else 0.)
         elif not x[c].astype(str).equals(y[c].astype(str)):
             return False, f'text differs in {c}'
